@@ -69,7 +69,7 @@ pnpm run dev
 If you want to hit the backend routes, make sure to also run the `uvicorn backend.server:app` command from the project root.
 
 <details>
-<summary><b>Serve with Vite</b></summary>
+<summary><b>For production (serve with Vite)</b></summary>
 
 ```
 pnpm run serve
@@ -78,17 +78,22 @@ pnpm run serve
 </details>
 
 <details>
-<summary><b>Serve with this repo's FastAPI server</b></summary>
+<summary><b>For production (serve with this repo's FastAPI server)</b></summary>
 
 ```
+cd client
 pnpm run build:backend
+cd ..
+uvicorn backend.server:app
 ```
+
+Or the `gunicorn` command from above.
 
 All artifacts are stored in the `client/dist` directory with the appropriate basepath.
 </details>
 
 <details>
-<summary><b>Serve with external tooling</b></summary>
+<summary><b>For production (serve with external tooling like NGINX)</b></summary>
 
 ```
 pnpm run build
