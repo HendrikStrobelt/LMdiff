@@ -1,25 +1,8 @@
-# VISstarter-vue
+# LMdiff
 
-Rapid visualization starter kit for VIS &amp; ML projects.
+Comparing language models
 
-## Setup
-1. `./setup_new.sh <MyProjectname>`
-
-    <details>
-    <summary>or <b>MANUALLY</b>...</summary>
-    Change the `vis-starter` text (and, if needed, author/description), in the following files:
-
-    - `environment.yml`
-    - `client/package.json`
-    - `setup.py`
-    - `client/index.html`
-    </details>
-
-2. Replace LICENSE as desired.
-
-3. Modify `backend/server/main.py` file for desired routes. API types are typically stored in `backend/server/api.py`
-### Backend
-
+## Backend
 From the root directory:
 
 ```
