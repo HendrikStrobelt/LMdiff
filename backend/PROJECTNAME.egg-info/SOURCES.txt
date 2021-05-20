@@ -1,0 +1,10 @@
+README.md
+setup.py
+backend/PROJECTNAME.egg-info/PKG-INFO
+backend/PROJECTNAME.egg-info/SOURCES.txt
+backend/PROJECTNAME.egg-info/dependency_links.txt
+backend/PROJECTNAME.egg-info/top_level.txt
+backend/server/__init__.py
+backend/server/api.py
+backend/server/main.py
+backend/server/utils.py

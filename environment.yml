@@ -1,0 +1,21 @@
+name: LMdiff
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.8
+  - pip>=20.0.0
+  - jupyter
+  - nb_conda
+  - pytest
+  - mypy
+  - black
+  - pip:
+    - fastapi[all]==0.65.1
+    - pydantic==1.8.2
+    - dvc[s3]==2.1.0
+    - regex==2021.4.4
+    - gunicorn==20.1.0
+    - torch
+    - numpy
