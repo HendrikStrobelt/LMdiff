@@ -41,6 +41,12 @@ where `4` is the number of workers desired.
 <summary><b>Testing</b></summary>
 
 ```
+make test
+```
+
+or
+
+```
 python -m pytest tests
 ```
 
