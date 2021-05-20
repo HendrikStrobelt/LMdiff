@@ -22,4 +22,5 @@ dependencies:
     - sentencepiece==0.1.95
     - transformers==4.6.0
     - torch==1.8.1
+    - datasets==1.6.2
 
