@@ -1,5 +1,5 @@
 {
-  "name": "LMdiff",
+  "name": "lm-diff",
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
