@@ -9,6 +9,7 @@ From the root directory:
 conda env create -f environment.yml
 conda activate <MyProjectName>
 pip install -e .
+dvc pull
 ```
 
 Run the backend in development mode:
