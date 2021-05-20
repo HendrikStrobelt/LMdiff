@@ -57,7 +57,7 @@ where `4` is the number of workers desired.
 <summary><b>Testing</b></summary>
 
 ```
-pytest tests
+python -m pytest tests
 ```
 
 All tests are stored in `tests`.
