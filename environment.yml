@@ -12,10 +12,14 @@ dependencies:
   - mypy
   - black
   - pip:
-    - fastapi[all]==0.65.1
-    - pydantic==1.8.2
+    - fastapi[all]
+    - pydantic
+    - spacy
+    - gunicorn==20.1.0
     - dvc[s3]==2.1.0
     - regex==2021.4.4
-    - gunicorn==20.1.0
-    - torch
-    - numpy
+    - numpy==1.20.3
+    - sentencepiece==0.1.95
+    - transformers==4.6.0
+    - torch==1.8.1
+

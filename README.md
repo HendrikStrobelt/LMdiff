@@ -1,31 +1,15 @@
-# VISstarter-vue
+# LMdiff
 
-Rapid visualization starter kit for VIS &amp; ML projects.
+Comparing language models
 
-## Setup
-1. `./setup_new.sh <MyProjectname>`
-
-    <details>
-    <summary>or <b>MANUALLY</b>...</summary>
-    Change the `vis-starter` text (and, if needed, author/description), in the following files:
-
-    - `environment.yml`
-    - `client/package.json`
-    - `setup.py`
-    - `client/index.html`
-    </details>
-
-2. Replace LICENSE as desired.
-
-3. Modify `backend/server/main.py` file for desired routes. API types are typically stored in `backend/server/api.py`
-### Backend
-
+## Backend
 From the root directory:
 
 ```
 conda env create -f environment.yml
 conda activate <MyProjectName>
 pip install -e .
+dvc pull
 ```
 
 Run the backend in development mode:
@@ -57,7 +41,13 @@ where `4` is the number of workers desired.
 <summary><b>Testing</b></summary>
 
 ```
-pytest tests
+make test
+```
+
+or
+
+```
+python -m pytest tests
 ```
 
 All tests are stored in `tests`.
@@ -79,7 +69,7 @@ pnpm run dev
 If you want to hit the backend routes, make sure to also run the `uvicorn backend.server:app` command from the project root.
 
 <details>
-<summary><b>Serve with Vite</b></summary>
+<summary><b>For production (serve with Vite)</b></summary>
 
 ```
 pnpm run serve
@@ -88,17 +78,22 @@ pnpm run serve
 </details>
 
 <details>
-<summary><b>Serve with this repo's FastAPI server</b></summary>
+<summary><b>For production (serve with this repo's FastAPI server)</b></summary>
 
 ```
+cd client
 pnpm run build:backend
+cd ..
+uvicorn backend.server:app
 ```
+
+Or the `gunicorn` command from above.
 
 All artifacts are stored in the `client/dist` directory with the appropriate basepath.
 </details>
 
 <details>
-<summary><b>Serve with external tooling</b></summary>
+<summary><b>For production (serve with external tooling like NGINX)</b></summary>
 
 ```
 pnpm run build

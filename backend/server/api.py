@@ -12,3 +12,13 @@ class HashableBaseModel(BaseModel):
 
 class GoodbyePayload(HashableBaseModel):
     firstname:str
+
+class SuggestionsRequest(HashableBaseModel):
+    m1: str
+    m2: str
+    corpus: str
+
+class AnalyzeRequest(HashableBaseModel):
+    m1: str
+    m2: Optional[str]=None
+    text: str
