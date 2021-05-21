@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import *
 import numpy as np
+import datasets
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
@@ -76,6 +77,26 @@ def send_data(path):
 # ======================================================================
 ## MAIN API ##
 # ======================================================================
+@app.get("/api/available_datasets")
+def get_available_datasets():
+    datasets.load_dataset()
+    return datasets.list_datasets()
+
+@app.get("/api/all_projects")
+def get_all_projects():
+    res = [{
+        'model': 'gpt2'
+    }, {
+        'model': 'lysandre/arxiv-nlp'
+    }, {
+        'model': 'distilgpt2'
+    }, {
+        'model': 'lysandre/arxiv'
+    }]
+
+    # for k in projects.keys():
+    #     res[k] = projects[k].config
+    return res
 
 @app.get("/api/all_projects")
 def get_all_projects():

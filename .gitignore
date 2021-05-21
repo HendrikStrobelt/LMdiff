@@ -1,3 +1,5 @@
+_archive
+_nbs
 *.egg-info
 .vscode
 *.pyc
