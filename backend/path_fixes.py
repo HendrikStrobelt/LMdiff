@@ -8,3 +8,4 @@ ROOT = Path(
 SRC = ROOT / "src"
 CLIENT = ROOT / "client"
 DIST = CLIENT / "dist"
+TESTS = ROOT / "tests"
