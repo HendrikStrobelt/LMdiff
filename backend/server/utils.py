@@ -4,6 +4,8 @@ If ever a function changes its input in place, it is denoted by a trailing `_`
 """
 
 import inspect
+import numpy as np
+import json
 from itertools import zip_longest
 from typing import List, Set, Union, Dict
 
