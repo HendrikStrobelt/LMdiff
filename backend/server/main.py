@@ -4,31 +4,35 @@ import json
 import re
 from pathlib import Path
 from typing import *
-import numpy as np
+from functools import lru_cache
+import datasets
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
-import backend.server.api as api
-import backend.path_fixes as pf
+import server.api as api
+import path_fixes as pf
 
-from backend.api import LMComparer, ModelManager
+from api import LMComparer, ModelManager
 
 __author__ = 'DreamTeam V1.5: Hendrik Strobelt, Sebastian Gehrmann, Ben Hoover'
 
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--model", default='gpt-2-small')
-parser.add_argument("--address",
-                    default="127.0.0.1")  # 0.0.0.0 for nonlocal use
-parser.add_argument("--port", type=int, default=5001, help="Port on which to run the app.")
-parser.add_argument("--dir", type=str, default=os.path.abspath('data'))
-parser.add_argument("--suggestions", type=str,
-                    default=os.path.abspath('data'))
+@lru_cache
+def get_args():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--model", default='gpt-2-small')
+    parser.add_argument("--address",
+                        default="127.0.0.1")  # 0.0.0.0 for nonlocal use
+    parser.add_argument("--port", type=int, default=5001, help="Port on which to run the app.")
+    parser.add_argument("--dir", type=str, default=os.path.abspath('data'))
+    parser.add_argument("--suggestions", type=str,
+                        default=os.path.abspath('data'))
 
-args, _ = parser.parse_known_args()
-print("ARGS: ", args)
+    args, _ = parser.parse_known_args()
+    return args
+
 
 app = FastAPI()
 app.add_middleware(
@@ -67,7 +71,7 @@ def send_data(path):
     Args:
         path: Path from api call
     """
-    f = Path(args.dir) / path
+    f = Path(get_args().dir) / path
     print("Finding data file: ", f)
     return FileResponse(f)
 
@@ -76,6 +80,26 @@ def send_data(path):
 # ======================================================================
 ## MAIN API ##
 # ======================================================================
+@app.get("/api/available_datasets")
+def get_available_datasets():
+    datasets.load_dataset()
+    return datasets.list_datasets()
+
+@app.get("/api/all_projects")
+def get_all_projects():
+    res = [{
+        'model': 'gpt2'
+    }, {
+        'model': 'lysandre/arxiv-nlp'
+    }, {
+        'model': 'distilgpt2'
+    }, {
+        'model': 'lysandre/arxiv'
+    }]
+
+    # for k in projects.keys():
+    #     res[k] = projects[k].config
+    return res
 
 @app.get("/api/all_projects")
 def get_all_projects():
@@ -99,7 +123,7 @@ def get_suggestions(m1: str, m2: str, corpus: str='wiki_split'):
     # suggestion['corpus'] = corpus
     # print(corpus)
     inverse_order = False
-    base_path = Path(args.suggestions)
+    base_path = Path(get_args().suggestions)
 
     models = [m1, m2]
     if m1 > m2:
@@ -152,4 +176,5 @@ def analyze(payload:api.AnalyzeRequest):
 if __name__ == "__main__":
     # This file is not run as __main__ in the uvicorn environment
     # args, _ = parser.parse_known_args()
+    args = get_args()
     uvicorn.run("server:app", host=args.address, port=args.port)

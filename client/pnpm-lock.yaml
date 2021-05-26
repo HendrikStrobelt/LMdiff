@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@types/d3': ^6.6.0
   '@vitejs/plugin-vue': ^1.2.2
   '@vue/compiler-sfc': ^3.0.5
   d3: ^6.7.0
@@ -10,6 +11,7 @@ specifiers:
   vue-tsc: ^0.0.24
 
 dependencies:
+  '@types/d3': 6.6.0
   d3: 6.7.0
   vue: 3.0.11
 
@@ -35,6 +37,193 @@ packages:
     dependencies:
       '@babel/helper-validator-identifier': 7.14.0
       to-fast-properties: 2.0.0
+
+  /@types/d3-array/2.12.0:
+    resolution: {integrity: sha512-UuX3Ikw90Ey90qMdQh+CagAgl1y5p/WWvkpTenCNa4A4n6dFPbVR2RDQMbmJUD6yy+3JnxJguVJeC/dvFT7igw==}
+    dev: false
+
+  /@types/d3-axis/2.1.0:
+    resolution: {integrity: sha512-6ekm+D+EG/LVT3oiwwU9wsm0+SBAQpxSSOsZq92fp+tnpaa19YMHpj8sRZQAeksSBcqNWzEMjuRPXR9s38YFaw==}
+    dependencies:
+      '@types/d3-selection': 2.0.0
+    dev: false
+
+  /@types/d3-brush/2.1.0:
+    resolution: {integrity: sha512-rLQqxQeXWF4ArXi81GlV8HBNwJw9EDpz0jcWvvzv548EDE4tXrayBTOHYi/8Q4FZ/Df8PGXFzxpAVQmJMjOtvQ==}
+    dependencies:
+      '@types/d3-selection': 2.0.0
+    dev: false
+
+  /@types/d3-chord/2.0.1:
+    resolution: {integrity: sha512-mqGww8qDtGZRnDsFizzobAVizd85hgaYNEri095ZI7/aYtW7hxa9a20enwuoVTWm0YqdCtLPoyV9ZPYgfyaTZw==}
+    dev: false
+
+  /@types/d3-color/2.0.1:
+    resolution: {integrity: sha512-u7LTCL7RnaavFSmob2rIAJLNwu50i6gFwY9cHFr80BrQURYQBRkJ+Yv47nA3Fm7FeRhdWTiVTeqvSeOuMAOzBQ==}
+    dev: false
+
+  /@types/d3-contour/2.0.0:
+    resolution: {integrity: sha512-PS9UO6zBQqwHXsocbpdzZFONgK1oRUgWtjjh/iz2vM06KaXLInLiKZ9e3OLBRerc1cU2uJYpO+8zOnb6frvCGQ==}
+    dependencies:
+      '@types/d3-array': 2.12.0
+      '@types/geojson': 7946.0.7
+    dev: false
+
+  /@types/d3-delaunay/5.3.0:
+    resolution: {integrity: sha512-gJYcGxLu0xDZPccbUe32OUpeaNtd1Lz0NYJtko6ZLMyG2euF4pBzrsQXms67LHZCDFzzszw+dMhSL/QAML3bXw==}
+    dev: false
+
+  /@types/d3-dispatch/2.0.0:
+    resolution: {integrity: sha512-Sh0KW6z/d7uxssD7K4s4uCSzlEG/+SP+U47q098NVdOfFvUKNTvKAIV4XqjxsUuhE/854ARAREHOxkr9gQOCyg==}
+    dev: false
+
+  /@types/d3-drag/2.0.0:
+    resolution: {integrity: sha512-VaUJPjbMnDn02tcRqsHLRAX5VjcRIzCjBfeXTLGe6QjMn5JccB5Cz4ztMRXMJfkbC45ovgJFWuj6DHvWMX1thA==}
+    dependencies:
+      '@types/d3-selection': 2.0.0
+    dev: false
+
+  /@types/d3-dsv/2.0.1:
+    resolution: {integrity: sha512-wovgiG9Mgkr/SZ/m/c0m+RwrIT4ozsuCWeLxJyoObDWsie2DeQT4wzMdHZPR9Ya5oZLQT3w3uSl0NehG0+0dCA==}
+    dev: false
+
+  /@types/d3-ease/2.0.0:
+    resolution: {integrity: sha512-6aZrTyX5LG+ptofVHf+gTsThLRY1nhLotJjgY4drYqk1OkJMu2UvuoZRlPw2fffjRHeYepue3/fxTufqKKmvsA==}
+    dev: false
+
+  /@types/d3-fetch/2.0.0:
+    resolution: {integrity: sha512-WnLepGtxepFfXRdPI8I5FTgNiHn9p4vMTTqaNCzJJfAswXx0rOY2jjeolzEU063em3iJmGZ+U79InnEeFOrCRw==}
+    dependencies:
+      '@types/d3-dsv': 2.0.1
+    dev: false
+
+  /@types/d3-force/2.1.1:
+    resolution: {integrity: sha512-3r+CQv2K/uDTAVg0DGxsbBjV02vgOxb8RhPIv3gd6cp3pdPAZ7wEXpDjUZSoqycAQLSDOxG/AZ54Vx6YXZSbmQ==}
+    dev: false
+
+  /@types/d3-format/2.0.0:
+    resolution: {integrity: sha512-uagdkftxnGkO4pZw5jEYOM5ZnZOEsh7z8j11Qxk85UkB2RzfUUxRl7R9VvvJZHwKn8l+x+rpS77Nusq7FkFmIg==}
+    dev: false
+
+  /@types/d3-geo/2.0.0:
+    resolution: {integrity: sha512-DHHgYXW36lnAEQMYU2udKVOxxljHrn2EdOINeSC9jWCAXwOnGn7A19B8sNsHqgpu4F7O2bSD7//cqBXD3W0Deg==}
+    dependencies:
+      '@types/geojson': 7946.0.7
+    dev: false
+
+  /@types/d3-hierarchy/2.0.0:
+    resolution: {integrity: sha512-YxdskUvwzqggpnSnDQj4KVkicgjpkgXn/g/9M9iGsiToLS3nG6Ytjo1FoYhYVAAElV/fJBGVL3cQ9Hb7tcv+lw==}
+    dev: false
+
+  /@types/d3-interpolate/2.0.0:
+    resolution: {integrity: sha512-Wt1v2zTlEN8dSx8hhx6MoOhWQgTkz0Ukj7owAEIOF2QtI0e219paFX9rf/SLOr/UExWb1TcUzatU8zWwFby6gg==}
+    dependencies:
+      '@types/d3-color': 2.0.1
+    dev: false
+
+  /@types/d3-path/1.0.9:
+    resolution: {integrity: sha512-NaIeSIBiFgSC6IGUBjZWcscUJEq7vpVu7KthHN8eieTV9d9MqkSOZLH4chq1PmcKy06PNe3axLeKmRIyxJ+PZQ==}
+    dev: false
+
+  /@types/d3-path/2.0.0:
+    resolution: {integrity: sha512-tXcR/9OtDdeCIsyl6eTNHC3XOAOdyc6ceF3QGBXOd9jTcK+ex/ecr00p9L9362e/op3UEPpxrToi1FHrtTSj7Q==}
+    dev: false
+
+  /@types/d3-polygon/2.0.0:
+    resolution: {integrity: sha512-fISnMd8ePED1G4aa4V974Jmt+ajHSgPoxMa2D0ULxMybpx0Vw4WEzhQEaMIrL3hM8HVRcKTx669I+dTy/4PhAw==}
+    dev: false
+
+  /@types/d3-quadtree/2.0.0:
+    resolution: {integrity: sha512-YZuJuGBnijD0H+98xMJD4oZXgv/umPXy5deu3IimYTPGH3Kr8Th6iQUff0/6S80oNBD7KtOuIHwHUCymUiRoeQ==}
+    dev: false
+
+  /@types/d3-random/2.2.0:
+    resolution: {integrity: sha512-Hjfj9m68NmYZzushzEG7etPvKH/nj9b9s9+qtkNG3/dbRBjQZQg1XS6nRuHJcCASTjxXlyXZnKu2gDxyQIIu9A==}
+    dev: false
+
+  /@types/d3-scale-chromatic/2.0.0:
+    resolution: {integrity: sha512-Y62+2clOwZoKua84Ha0xU77w7lePiaBoTjXugT4l8Rd5LAk+Mn/ZDtrgs087a+B5uJ3jYUHHtKw5nuEzp0WBHw==}
+    dev: false
+
+  /@types/d3-scale/3.2.3:
+    resolution: {integrity: sha512-ghfaWBFew5pqbGEnR+cCcqROxyRdxoeul9tURw4Li2hsxnW+wfU4RnPuitA6wFskqQCtg8JmsT3b+7/1Ftp0sQ==}
+    dependencies:
+      '@types/d3-time': 2.0.0
+    dev: false
+
+  /@types/d3-selection/2.0.0:
+    resolution: {integrity: sha512-EF0lWZ4tg7oDFg4YQFlbOU3936e3a9UmoQ2IXlBy1+cv2c2Pv7knhKUzGlH5Hq2sF/KeDTH1amiRPey2rrLMQA==}
+    dev: false
+
+  /@types/d3-shape/2.1.0:
+    resolution: {integrity: sha512-xTMEs8eITRksXclcVxMHIONRdyjj2TjDIwO4XFOPTVBNK9/oC4ZOhUbvTz1IpcsEsS/mClwuulP+OoawSAbSGA==}
+    dependencies:
+      '@types/d3-path': 1.0.9
+    dev: false
+
+  /@types/d3-time-format/3.0.0:
+    resolution: {integrity: sha512-UpLg1mn/8PLyjr+J/JwdQJM/GzysMvv2CS8y+WYAL5K0+wbvXv/pPSLEfdNaprCZsGcXTxPsFMy8QtkYv9ueew==}
+    dev: false
+
+  /@types/d3-time/2.0.0:
+    resolution: {integrity: sha512-Abz8bTzy8UWDeYs9pCa3D37i29EWDjNTjemdk0ei1ApYVNqulYlGUKip/jLOpogkPSsPz/GvZCYiC7MFlEk0iQ==}
+    dev: false
+
+  /@types/d3-timer/2.0.0:
+    resolution: {integrity: sha512-l6stHr1VD1BWlW6u3pxrjLtJfpPZq9I3XmKIQtq7zHM/s6fwEtI1Yn6Sr5/jQTrUDCC5jkS6gWqlFGCDArDqNg==}
+    dev: false
+
+  /@types/d3-transition/2.0.0:
+    resolution: {integrity: sha512-UJDzI98utcZQUJt3uIit/Ho0/eBIANzrWJrTmi4+TaKIyWL2iCu7ShP0o4QajCskhyjOA7C8+4CE3b1YirTzEQ==}
+    dependencies:
+      '@types/d3-selection': 2.0.0
+    dev: false
+
+  /@types/d3-zoom/2.0.1:
+    resolution: {integrity: sha512-FuiGLfaHmp84b9wsj0dG03E/aJl5k98OLnJ2/5p7bQOHEpWqR+z5WCoWYMAbdGxaca7VNd9tCT5i6AJnpauNTQ==}
+    dependencies:
+      '@types/d3-interpolate': 2.0.0
+      '@types/d3-selection': 2.0.0
+    dev: false
+
+  /@types/d3/6.6.0:
+    resolution: {integrity: sha512-YybKWTIulg+ecSKflvMRYx+G1FJ7SFKfdknw2DU1TSDsvzO+yD8IfEaUOcvdnY/GRg5mbaRmURR7tgmiRsK1Iw==}
+    dependencies:
+      '@types/d3-array': 2.12.0
+      '@types/d3-axis': 2.1.0
+      '@types/d3-brush': 2.1.0
+      '@types/d3-chord': 2.0.1
+      '@types/d3-color': 2.0.1
+      '@types/d3-contour': 2.0.0
+      '@types/d3-delaunay': 5.3.0
+      '@types/d3-dispatch': 2.0.0
+      '@types/d3-drag': 2.0.0
+      '@types/d3-dsv': 2.0.1
+      '@types/d3-ease': 2.0.0
+      '@types/d3-fetch': 2.0.0
+      '@types/d3-force': 2.1.1
+      '@types/d3-format': 2.0.0
+      '@types/d3-geo': 2.0.0
+      '@types/d3-hierarchy': 2.0.0
+      '@types/d3-interpolate': 2.0.0
+      '@types/d3-path': 2.0.0
+      '@types/d3-polygon': 2.0.0
+      '@types/d3-quadtree': 2.0.0
+      '@types/d3-random': 2.2.0
+      '@types/d3-scale': 3.2.3
+      '@types/d3-scale-chromatic': 2.0.0
+      '@types/d3-selection': 2.0.0
+      '@types/d3-shape': 2.1.0
+      '@types/d3-time': 2.0.0
+      '@types/d3-time-format': 3.0.0
+      '@types/d3-timer': 2.0.0
+      '@types/d3-transition': 2.0.0
+      '@types/d3-zoom': 2.0.1
+    dev: false
+
+  /@types/geojson/7946.0.7:
+    resolution: {integrity: sha512-wE2v81i4C4Ol09RtsWFAqg3BUitWbHSpSlIo+bNdsCJijO9sjme+zm+73ZMCa/qMC8UEERxzGbvmr1cffo2SiQ==}
+    dev: false
 
   /@vitejs/plugin-vue/1.2.2_@vue+compiler-sfc@3.0.11:
     resolution: {integrity: sha512-5BI2WFfs/Z0pAV4S/IQf1oH3bmFYlL5ATMBHgTt1Lf7hAnfpNd5oUAAs6hZPfk3QhvyUQgtk0rJBlabwNFcBJQ==}
