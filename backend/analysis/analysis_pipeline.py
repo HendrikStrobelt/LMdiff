@@ -32,6 +32,7 @@ class AutoLMPipeline():
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
         self.vocab_hash = hash(frozenset(self.tokenizer.vocab.items()))
+        self.device = self.model.device
                 
     @classmethod
     def from_pretrained(cls, name_or_path):
@@ -41,15 +42,12 @@ class AutoLMPipeline():
         return cls(model, tokenizer)
 
     def for_model(self, s):
-        return self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")['input_ids']
+        iids = self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")['input_ids']
+        return iids
     
-    def for_model_batch(self, s:Union[str, List[str]]):
-        if isinstance(s, list):
-            ii = self.tokenizer.batch_encode_plus(s)['input_ids']
-            prefix = torch.tensor(self.tokenizer.eos_token_id)
-            input = self.tokenizer.prepare_for_model(ii, return_tensors="pt", padding=True)
-            input_ids = torch.cat([prefix.expand((len(s), 1)), input['input_ids']], dim=1)
-            input['input_ids'] = input_ids
+    def for_model_batch(self, s:List[str]):
+        ii = self.tokenizer.batch_encode_plus(s)['input_ids']
+        input = self.tokenizer.prepare_for_model(ii, return_tensors="pt", padding=True)
 
         return input
     
