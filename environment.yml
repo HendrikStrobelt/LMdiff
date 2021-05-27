@@ -6,8 +6,8 @@ channels:
 dependencies:
   - python=3.8
   - pip>=20.0.0
-  - jupyter
-  - nb_conda
+#  - jupyter
+#  - nb_conda
   - pytest
   - mypy
   - black

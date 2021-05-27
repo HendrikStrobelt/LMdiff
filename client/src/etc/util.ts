@@ -19,9 +19,25 @@ export class Transforms {
     }
 }
 
-/** 
+export function token_cleanup(token) {
+
+    token = (token.startsWith('Ġ')) ? token.slice(1) : ((token.startsWith('Ċ') || token.startsWith('â')) ? " " : token);
+    // token = (token.startsWith('â')) ? '–' : token;
+    // token = (token.startsWith('ľ')) ? '“' : token;
+    // token = (token.startsWith('Ŀ')) ? '”' : token;
+    // token = (token.startsWith('Ļ')) ? "'" : token;
+
+    try {
+        token = decodeURIComponent(escape(token));
+    } catch{
+        console.log(token, '-- token is hard');
+    }
+    return token;
+}
+
+/**
  * From https://stackoverflow.com/questions/33855641/copy-output-of-a-javascript-variable-to-the-clipboard
- * 
+ *
  * Copy specified `text` to clipboard
  */
 export function copyToClipboard(text:string) {
