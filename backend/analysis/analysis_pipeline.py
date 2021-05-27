@@ -31,7 +31,7 @@ class AutoLMPipeline():
         self.tokenizer = tokenizer
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
-        self.vocab_hash = hash(frozenset(self.tokenizer.vocab.items()))
+        self.vocab_hash = str(hash(frozenset(self.tokenizer.vocab.items())))
         self.device = self.model.device
                 
     @classmethod

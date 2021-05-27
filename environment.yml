@@ -26,4 +26,6 @@ dependencies:
     - datasets==1.6.2
     - python-frontmatter==1.0.0
     - h5py==3.2.1
+    - pandas==1.2.4
+
 

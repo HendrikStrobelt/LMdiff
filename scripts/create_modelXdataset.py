@@ -1,7 +1,7 @@
 """
 Example Usage: 
 
-python scripts/create_modelXdataset.py distilgpt2 data/datasets/glue_mrpc_1+2.txt -o data/analysis_results --first_n 10 --force_overwrite
+python scripts/create_modelXdataset.py distilgpt2 data/datasets/glue_mrpc_1+2.txt -o data/analysis_results --force_overwrite
 """
 import argparse
 from pathlib import Path
@@ -82,7 +82,7 @@ def create_analysis_results(
     # Create the attrs
     h5f.attrs["dataset_name"] = tds.name
     h5f.attrs["dataset_checksum"] = tds.checksum
-    h5f.attrs["vocab_hash"] = pipeline.vocab_hash
+    h5f.attrs["vocab_hash"] = str(pipeline.vocab_hash)
     h5f.attrs["model_name"] = model_name
 
     # Add vocabulary

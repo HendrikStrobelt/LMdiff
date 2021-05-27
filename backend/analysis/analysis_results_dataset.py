@@ -17,6 +17,8 @@ class H5AnalysisResultDataset:
         self.model_name = self.h5f.attrs['model_name']
         self.vocab_hash = self.h5f.attrs['vocab_hash']
 
+        self.__n = 0 # For iteration
+
         # Create the vocabulary
         self.vocab = self.h5f["vocabulary"]
         
@@ -25,15 +27,21 @@ class H5AnalysisResultDataset:
         h5f = h5py.File(fname, 'r')
         return cls(h5f)
 
+    def is_comparable(self, other):
+        return (self.dataset_checksum == other.dataset_checksum) and (self.vocab_hash == other.vocab_hash)
+
     def __del__(self):
-        self.h5f.close()
+        try:
+            self.h5f.close()
+        except TypeError as e:
+            pass
         
     def _grp2output(self, grp):
         return LMAnalysisOutputH5.from_group(grp)
     
     def __len__(self):
         return len(self.h5f.keys()) - 1 # for vocabulary
-        
+
     def __getitem__(self, val:Union[int, slice]) -> Union[LMAnalysisOutputH5, List[LMAnalysisOutputH5]]:
         if isinstance(val, int):
             grp = self.h5f[self.tokey(val)]
@@ -44,3 +52,15 @@ class H5AnalysisResultDataset:
             return [self._grp2output(g) for g in grps]
         else:
             raise ValueError(f"Indexed with {type(val)}. Not a slice or int!")
+
+    def __iter__(self):
+        self.__n = 0
+        return self
+
+    def __next__(self):
+        if self.__n < len(self):
+            result = self[self.__n]
+            self.__n += 1
+            return result
+        else:
+            raise StopIteration
