@@ -2,7 +2,8 @@ from typing import *
 import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-from server.utils import jsonify_np
+# from server.utils import jsonify_np # Circular import issues
+# from torch.nn.functional import kl_div
 
 import torch
 import h5py
@@ -28,8 +29,9 @@ class AutoLMPipeline():
     def __init__(self, model, tokenizer):
         self.model = model
         self.tokenizer = tokenizer
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
-        self.vocab_checksum = hash(frozenset(self.tokenizer.vocab.items()))
+        self.vocab_hash = hash(frozenset(self.tokenizer.vocab.items()))
                 
     @classmethod
     def from_pretrained(cls, name_or_path):
@@ -37,9 +39,19 @@ class AutoLMPipeline():
         model = AutoModelForCausalLM.from_pretrained(name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(name_or_path)
         return cls(model, tokenizer)
-    
+
     def for_model(self, s):
         return self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")['input_ids']
+    
+    def for_model_batch(self, s:Union[str, List[str]]):
+        if isinstance(s, list):
+            ii = self.tokenizer.batch_encode_plus(s)['input_ids']
+            prefix = torch.tensor(self.tokenizer.eos_token_id)
+            input = self.tokenizer.prepare_for_model(ii, return_tensors="pt", padding=True)
+            input_ids = torch.cat([prefix.expand((len(s), 1)), input['input_ids']], dim=1)
+            input['input_ids'] = input_ids
+
+        return input
     
     def forward(self, s) -> AnalysisLMPipelineForwardOutput:
         with torch.no_grad():
@@ -90,16 +102,16 @@ class LMAnalysisOutputH5:
         h5group.create_dataset("attention", data=self.attention)
         h5group.attrs['phrase'] = self.phrase
 
-    def to_json(self):
-        return {
-            "token_ids": jsonify_np(self.token_ids),
-            "ranks": jsonify_np(self.ranks),
-            "probs": jsonify_np(self.probs),
-            "topk_probs": jsonify_np(self.topk_prob_values),
-            "topk_token_ids": jsonify_np(self.topk_token_ids),
-            "attention": jsonify_np(self.attention),
-            "phrase": self.phrase
-        }
+    # def to_json(self):
+    #     return {
+    #         "token_ids": jsonify_np(self.token_ids),
+    #         "ranks": jsonify_np(self.ranks),
+    #         "probs": jsonify_np(self.probs),
+    #         "topk_probs": jsonify_np(self.topk_prob_values),
+    #         "topk_token_ids": jsonify_np(self.topk_token_ids),
+    #         "attention": jsonify_np(self.attention),
+    #         "phrase": self.phrase
+    #     }
 
     
 @dataclass
@@ -148,7 +160,39 @@ def collect_analysis_info(model_output:AnalysisLMPipelineForwardOutput, k=10) ->
         token_ids=model_output.in_ids,
         ranks=ranks,
         probs=phrase_probs,
-        topk_prob_values=topk_prob_values.T,
-        topk_token_ids=topk_prob_inds.T,
+        topk_prob_values=topk_prob_values,
+        topk_token_ids=topk_prob_inds,
         attention=attention,
     )
+
+def analyze_text(text:str, pp1:AutoLMPipeline, pp2:AutoLMPipeline, topk=10):
+    assert pp1.vocab_hash == pp2.vocab_hash, "Vocabularies of the two pipelines must align"
+
+    tokens = pp1.tokenizer.tokenize(text)
+    output1 = pp1.forward(text)
+    output2 = pp2.forward(text)
+
+    parsed_output1 = collect_analysis_info(output1, k=topk)
+    parsed_output2 = collect_analysis_info(output2, k=topk)
+
+    return {
+        "text": text,
+        "tokens": tokens,
+        "m1": {
+            "rank": parsed_output1.ranks,
+            "prob": parsed_output1.probs,
+            "topk": pp1.idmat2tokens(parsed_output1.topk_token_ids), # Turn to str
+            "attentions": parsed_output1.attention
+        },
+        "m2": {
+            "rank": parsed_output2.ranks,
+            "prob": parsed_output2.probs,
+            "topk": pp2.idmat2tokens(parsed_output2.topk_token_ids), # Turn to str
+            "attentions": parsed_output2.attention
+        },
+        "diff": {
+            "rank": parsed_output2.ranks - parsed_output1.ranks,
+            "prob": parsed_output2.probs - parsed_output1.probs,
+            # "kl": kl_div(parsed_output1.probs, parsed_output2.probs, reduction="sum") # No meaning
+        }
+    }
