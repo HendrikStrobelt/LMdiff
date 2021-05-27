@@ -16,7 +16,9 @@
     > analyze text
     </button>
 
-    <div style="padding: 10px 0" v-show="states.analyzeRequestSent">  Request sent and processing .....</div>
+    <div style="padding: 10px 0" v-show="states.analyzeRequestSent"> Request
+      sent and processing .....
+    </div>
 
     <div style="overflow-x: auto;"
          v-show="!states.zeroRequests && !states.analyzeRequestSent">
@@ -42,13 +44,9 @@
 
 <script lang="ts">
 import {defineComponent, reactive, ref} from 'vue'
-import HelloWorld from './components/HelloWorld.vue'
-import C1 from "./components/c1.vue";
-import C2 from "./components/c2.vue";
 import {API} from "./api";
-import NavBar from "./NavBar.vue";
 import LineGraph from "./components/LineGraph.vue";
-import {range} from "lodash"
+import NavBar from "./components/NavBar.vue";
 import {scalePow} from "d3"
 
 export default defineComponent({
@@ -85,8 +83,6 @@ export default defineComponent({
     })
 
     const analyzeText = () => {
-      console.log(selectedM1, selectedM2, "--- selectedM1, selectedM2");
-
       states.analyzeRequestSent = true;
       states.zeroRequests = false;
       api.analyze(
@@ -100,10 +96,6 @@ export default defineComponent({
         rankValues.value = [r.rank_m1, r.rank_m2]
 
       })
-
-
-      // probValues.value = [1, 2].map(() => range(150).map(() => Math.random()))
-      // rankValues.value = [1, 2].map(() => range(150).map(() => Math.random()))
     }
 
 
