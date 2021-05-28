@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import {makeUrl, toPayload} from './etc/apiHelpers'
 import * as URLHandler from './etc/urlHandler'
 
-const debug = true;
+const debug = false;
 import response from "./assets/test_analyze.json";
 
 
@@ -95,7 +95,7 @@ export class API {
    * get a list of all available projects
    */
   public all_projects(): Promise<{ model: string, [key: string]: string }[]> {
-    return d3.json(this.baseURL + '/all_projects')
+    return d3.json(this.baseURL + '/all-models')
   }
 
   /***
