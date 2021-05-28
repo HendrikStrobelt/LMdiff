@@ -33,15 +33,17 @@
   </div>
 </template>
 <script lang="ts">
-export default {
+import { defineComponent, PropType } from "@vue/runtime-core"
+
+export default defineComponent({
   name: 'NavBar',
   props: {
-    allModels: Array,
+    allModels: Array as PropType<any[]>,
     selectedM1: String,
     selectedM2: String
   },
   emits:["update:selectedM1","update:selectedM2" ]
-}
+})
 </script>
 <style>
 
