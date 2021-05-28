@@ -121,12 +121,12 @@ def send_data(path):
 # ======================================================================
 ## MAIN API ##
 # ======================================================================
-@app.get("/api/available_datasets")
+@app.get("/api/available-datasets")
 def get_available_datasets():
     return ["glue_mrpc_1+2"]
 
 
-@app.get("/api/all_projects")
+@app.get("/api/all-projects")
 def get_all_projects():
     res = [
         {"model": "gpt2"},
