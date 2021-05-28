@@ -8,6 +8,12 @@ import numpy as np
 import torch
 from itertools import zip_longest
 from typing import List, Set, Union, Dict
+from enum import Enum
+
+
+class SortOrder(str, Enum):
+    ascending = "ascending"
+    descending = "descending"
 
 
 def ifnone(*xs):
@@ -154,20 +160,24 @@ def jsonify_np(obj):
         return obj
 
 
-def round_nested_list(x, ndigits: int = 3):
-    """Round a nested list to `ndigits` decimals"""
+def round_nested_list(x, ndigits: int = 3, force_float=True):
+    """Round a nested list to `ndigits` decimals, coercing ints into floats"""
     if isinstance(x, float):
-        return round(x, ndigits=ndigits)
+        return round(x, ndigits)
     elif isinstance(x, int):
-        return float(x)
-    return [round_nested_list(i, ndigits) for i in x]
+        if force_float:
+            return float(x)
+        return x
+    return [round_nested_list(i, ndigits, force_float) for i in x]
 
 
-def deepdict_to_json(x, ndigits=3):
+def deepdict_to_json(x, ndigits=3, force_float=False):
     """Convert a nested dictionary to a jsonable object, rounding items as necessary"""
     if isinstance(x, torch.Tensor) or isinstance(x, np.ndarray):
-        return round_nested_list(x.tolist(), ndigits)
+        return round_nested_list(x.tolist(), ndigits, force_float)
+    elif isinstance(x, float):
+        return round(x, ndigits)
     elif isinstance(x, dict):
-        return {k: deepdict_to_json(v) for k, v in x.items()}
+        return {k: deepdict_to_json(v, ndigits, force_float) for k, v in x.items()}
 
     return x

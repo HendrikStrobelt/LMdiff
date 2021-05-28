@@ -1,19 +1,23 @@
 import argparse
+from analysis.analysis_results_dataset import H5AnalysisResultDataset
 import os
 import json
 import re
+import torch
+from enum import Enum
 from pathlib import Path
 from typing import *
 from functools import lru_cache
-import datasets
+import pandas as pd
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 import uvicorn
 import server.api as api
-from server.utils import deepdict_to_json
+from server.utils import deepdict_to_json, SortOrder
 from analysis import AutoLMPipeline, analyze_text
 import path_fixes as pf
 
@@ -25,6 +29,18 @@ __author__ = "DreamTeam V1.5: Hendrik Strobelt, Sebastian Gehrmann, Ben Hoover"
 @lru_cache
 def get_pipeline(name: str):
     return AutoLMPipeline.from_pretrained(name)
+
+
+@lru_cache
+def get_comparison_results(m1: str, m2: str, dataset: str):
+    results_fname = pf.COMPARISONS / f"{m1}_{m2}_{dataset}.csv"
+    compared_results = pd.read_csv(str(results_fname), index_col=0)
+    return compared_results
+
+
+@lru_cache
+def get_analysis_results(dataset: str, mname: str):
+    return H5AnalysisResultDataset.from_file(str(pf.ANALYSIS / f"{dataset}_{mname}.h5"))
 
 
 @lru_cache
@@ -56,6 +72,20 @@ app.add_middleware(
 lru = {}
 model_manager = ModelManager()
 
+class AvailableMetrics(str, Enum):
+    avg_rank_diff = "avg_rank_diff"
+    max_rank_diff = "max_rank_diff"
+    avg_clamped_rank_diff = "avg_clamped_rank_diff"
+    max_clamped_rank_diff = "max_clamped_rank_diff"
+    avg_prob_diff = "avg_prob_diff"
+    max_prob_diff = "max_prob_diff"
+    kl = "kl"
+    avg_topk_diff = "avg_topk_diff"
+    max_topk_diff = "max_topk_diff"
+
+available_metrics = set(AvailableMetrics._member_names_)
+
+
 # Main routes
 @app.get("/")
 def index():
@@ -66,7 +96,7 @@ def index():
 # the `file_path:path` says to accept any path as a string here. Otherwise, `file_paths` containing `/` will not be served properly
 @app.get("/client/{file_path:path}")
 def send_static_client(file_path: str):
-    """ Serves (makes accessible) all files from ./client/ to ``/client/{path}``. Used primarily for development. NGINX handles production.
+    """Serves (makes accessible) all files from ./client/ to ``/client/{path}``. Used primarily for development. NGINX handles production.
 
     Args:
         path: Name of file in the client directory
@@ -78,7 +108,7 @@ def send_static_client(file_path: str):
 
 @app.get("/data/{path:path}")
 def send_data(path):
-    """ serves all files from the data dir to ``/data/{path:path}``
+    """serves all files from the data dir to ``/data/{path:path}``
 
     Args:
         path: Path from api call
@@ -93,21 +123,95 @@ def send_data(path):
 # ======================================================================
 @app.get("/api/available_datasets")
 def get_available_datasets():
-    return ["hate-tweets"]
+    return ["glue_mrpc_1+2"]
 
 
 @app.get("/api/all_projects")
 def get_all_projects():
     res = [
         {"model": "gpt2"},
-        # {"model": "lysandre/arxiv-nlp"},
         {"model": "distilgpt2"},
+        # {"model": "lysandre/arxiv-nlp"},
         # {"model": "lysandre/arxiv"},
     ]
 
-    # for k in projects.keys():
-    #     res[k] = projects[k].config
     return res
+
+
+@app.get("/api/new-suggestions")
+def new_suggestions(
+    m1: str,
+    m2: str,
+    dataset: str,
+    metric: AvailableMetrics,
+    order: SortOrder = "descending",
+    k: int = 50,
+):
+    f"""Get the comparison between model m1 and m2 on the dataset. Rank the output according to a valid metric
+
+    Args:
+        m1 (str): The name of the first model to compare
+        m2 (str): The name of the second model to compare. Should have the same tokenizer as m1
+        dataset (str): The name of the dataset both the models already analyzed.
+        metric (str): One of the available metrics: '{available_metrics}'
+        order (SortOrder, optional): If "ascending", sort in order of least to greatest. Defaults to "descending".
+        k (int, optional): The number of interesting instances to return. Defaults to 50.
+
+    Returns:
+        Object containing information to statically analyze two models.
+    """
+    pp1 = get_pipeline(m1)
+    pp2 = get_pipeline(m2)
+    ds1 = get_analysis_results(dataset, m1)
+    ds2 = get_analysis_results(dataset, m2)
+    compared_results = get_comparison_results(m1, m2, dataset)
+
+    df_sorted = compared_results.sort_values(
+        by=metric, ascending=("ascending" == order)
+    )[:k]
+    metrics = df_sorted.to_dict(orient="index")
+
+    def proc_data_row(x1, x2):
+        tokens = pp1.tokenizer.convert_ids_to_tokens(x1.token_ids)
+        text = x1.phrase
+        m1_info = {
+            "rank": x1.ranks,
+            "prob": x1.probs,
+            "topk": pp1.idmat2tokens(torch.tensor(x1.topk_token_ids)),
+        }
+        m2_info = {
+            "rank": x2.ranks,
+            "prob": x2.probs,
+            "topk": pp2.idmat2tokens(torch.tensor(x2.topk_token_ids)),
+        }
+        diff = {"rank": x2.ranks - x1.ranks, "prob": x2.probs - x1.probs}
+        return {
+            "tokens": tokens,
+            "text": text,
+            "m1": m1_info,
+            "m2": m2_info,
+            "diff": diff,
+        }
+
+    result = [
+        deepdict_to_json(o, ndigits=3)
+        for o in [
+            dict({"example_idx": k, "metrics": v}, **proc_data_row(ds1[k], ds2[k]))
+            for k, v in metrics.items()
+        ]
+    ]
+
+    return {
+        "request": {
+            "m1": m1,
+            "m2": m2,
+            "dataset": dataset,
+            "metric": metric,
+            "order": order,
+            "k": k,
+        },
+        "result": result,
+    }
 
 
 @app.get("/api/suggestions")
@@ -132,7 +236,14 @@ def get_suggestions(m1: str, m2: str, corpus: str = "wiki_split"):
     else:
         res = None
 
-    return {"request": {"m1": m1, "m2": m2, "corpus": corpus,}, "result": res}
+    return {
+        "request": {
+            "m1": m1,
+            "m2": m2,
+            "corpus": corpus,
+        },
+        "result": res,
+    }
 
 
 @app.post("/api/analyze-text")

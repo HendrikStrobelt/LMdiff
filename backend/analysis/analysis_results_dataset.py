@@ -42,7 +42,7 @@ class H5AnalysisResultDataset:
     def __len__(self):
         return len(self.h5f.keys()) - 1 # for vocabulary
 
-    def __getitem__(self, val:Union[int, slice]) -> Union[LMAnalysisOutputH5, List[LMAnalysisOutputH5]]:
+    def __getitem__(self, val:Union[int, slice, list, np.ndarray]) -> Union[LMAnalysisOutputH5, List[LMAnalysisOutputH5]]:
         if isinstance(val, int):
             grp = self.h5f[self.tokey(val)]
             return self._grp2output(grp)
@@ -50,8 +50,16 @@ class H5AnalysisResultDataset:
             idxs = np.arange(len(self))[val]
             grps = (self.h5f[self.tokey(idx)] for idx in idxs)
             return [self._grp2output(g) for g in grps]
+        elif isinstance(val, list):
+            grps = (self.h5f[self.tokey(int(idx))] for idx in val)
+            return [self._grp2output(g) for g in grps]
+        elif isinstance(val, np.ndarray):
+            if not np.issubdtype(val.dtype, np.integer):
+                raise ValueError(f"Needs an integer-like index. Got {val.dtype}")
+            grps = (self.h5f[self.tokey(int(idx))] for idx in val)
+            return [self._grp2output(g) for g in grps]
         else:
-            raise ValueError(f"Indexed with {type(val)}. Not a slice or int!")
+            raise ValueError(f"Indexed with {type(val)}. Not a slice or int or list or np.array of integers!")
 
     def __iter__(self):
         self.__n = 0

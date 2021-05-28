@@ -1,7 +1,7 @@
 """
 Example Usage: 
 
-python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_gpt2.h5 -o data/compared_results
+python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_gpt2.h5 -o data/compared_results --bidirectional
 """
 
 import argparse
@@ -28,17 +28,22 @@ parser.add_argument(
     help="path to second h5 file",
 )
 parser.add_argument(
-    "--output_f",
+    "--output_dir",
     "-o",
     type=str,
     default=None,
-    help="Where to store the output h5 file. If not provided or is the name of existing directory, create using name of provided ds and model",
+    help="Which directory to store the output h5 file with the default name.",
 )
 parser.add_argument(
     "--max_clamp_rank",
     type=int,
     default=50,
     help="Ranks beyond this are clamped to this value",
+)
+parser.add_argument(
+    "--bidirectional",
+    action="store_true",
+    help="If passed, compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Some of the 'metrics' are asymmetric",
 )
 
 args = parser.parse_args()
@@ -74,29 +79,33 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
         "max_topk_diff": n_topk_diff.max()
     }
 
+if args.output_dir is None: output_dir = Path(".")
+else: output_dir = Path(args.output_dir)
+if output_dir.is_file(): raise ValueError("Specified output dir cannot be an existing file")
+output_dir.mkdir(parents=True, exist_ok=True)
+
 # Smart defaults
-
-ds1 = H5AnalysisResultDataset.from_file(args.ds1)
-ds2 = H5AnalysisResultDataset.from_file(args.ds2)
-
-
-assert ds1.dataset_name == ds2.dataset_name, "The two datasets should have the same name"
-ds_name = ds1.dataset_name
-assert ds1.dataset_checksum == ds2.dataset_checksum, "The two datasets should have the same checksum of contents"
-assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
-
-default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
-if args.output_f is None:
-    output_name = Path(default_name)
-elif Path(args.output_f).is_dir():
-    output_name = Path(args.output_f) / default_name
-else:
-    output_name = Path(args.output_f)
-output_f = Path(output_name)
-output_f.parent.mkdir(parents=True, exist_ok=True)
+def compare_datasets(ds1_name, ds2_name):
+    ds1 = H5AnalysisResultDataset.from_file(ds1_name)
+    ds2 = H5AnalysisResultDataset.from_file(ds2_name)
 
 
-diff_ab = [ex_compare(exa, exb, max_rank=args.max_clamp_rank)for exa, exb in tqdm(zip(ds1, ds2), total=len(ds1))]
-df = pd.DataFrame(data=diff_ab)
-print(f"Saving analsysis results to {output_f}")
-df.to_csv(output_f)
+    assert ds1.dataset_name == ds2.dataset_name, "The two datasets should have the same name"
+    ds_name = ds1.dataset_name
+    assert ds1.dataset_checksum == ds2.dataset_checksum, "The two datasets should have the same checksum of contents"
+
+    # Below is BROKEN because python's `hash` function changes between process runs
+    # assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
+
+    default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
+    output_f = output_dir / default_name
+
+    diff_ab = [ex_compare(exa, exb, max_rank=args.max_clamp_rank)for exa, exb in tqdm(zip(ds1, ds2), total=len(ds1))]
+    df = pd.DataFrame(data=diff_ab)
+    print(f"     Saving analysis results to {output_f}")
+    df.to_csv(output_f)
+
+compare_datasets(args.ds1, args.ds2)
+if args.bidirectional:
+    print("\n\nRepeating with inverted datasets\n\n")
+    compare_datasets(args.ds2, args.ds1)

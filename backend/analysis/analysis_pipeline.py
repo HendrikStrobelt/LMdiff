@@ -2,6 +2,7 @@ from typing import *
 import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from hashlib import sha256
 # from server.utils import jsonify_np # Circular import issues
 # from torch.nn.functional import kl_div
 
@@ -28,11 +29,14 @@ class AnalysisLMPipelineForwardOutput(CausalLMOutputWithCrossAttentions):
 class AutoLMPipeline():
     def __init__(self, model, tokenizer):
         self.model = model
+        self.device = self.model.device
         self.tokenizer = tokenizer
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
+
+        # s = str(frozenset(self.tokenizer.vocab.items()))
+        # self.vocab_hash = sha256(s.encode('utf-8')).hexdigest()
         self.vocab_hash = str(hash(frozenset(self.tokenizer.vocab.items())))
-        self.device = self.model.device
                 
     @classmethod
     def from_pretrained(cls, name_or_path):
