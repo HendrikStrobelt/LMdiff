@@ -2,69 +2,74 @@ import * as d3 from 'd3';
 import {makeUrl, toPayload} from './etc/apiHelpers'
 import * as URLHandler from './etc/urlHandler'
 
+const debug = true;
+import response from "./assets/test_analyze.json";
+
+
+
 /***
  *  ==== API DATATYPES =====
  */
 
 export type AnalyzedText = {
-    prob: {
-        diff: number[],
-        kl: number[],
-        prob_m1: number[],
-        prob_m2: number[],
-        rank_m1: number[],
-        rank_m2: number[]
-    }
-    tokens: string[]
+  prob: {
+    diff: number[],
+    kl: number[],
+    prob_m1: number[],
+    prob_m2: number[],
+    rank_m1: number[],
+    rank_m2: number[]
+  }
+  tokens: string[]
 }
 
 export type SuggestionProps = {
-    kl: number[],
-    prob_diff: number[],
-    prob_m1: number[],
-    prob_m2: number[],
-    rank_diff: number[],
-    rank_diff_clamp: number[],
-    rank_m1: number[],
-    rank_m2: number[],
-    rank_m1_clamp: number[],
-    rank_m2_clamp: number[],
-    sentence: string,
-    tokens: string[],
-    topk_m1: [string, number][][],
-    topk_m2: [string, number][][],
-    inverse_order?: boolean
+  kl: number[],
+  prob_diff: number[],
+  prob_m1: number[],
+  prob_m2: number[],
+  rank_diff: number[],
+  rank_diff_clamp: number[],
+  rank_m1: number[],
+  rank_m2: number[],
+  rank_m1_clamp: number[],
+  rank_m2_clamp: number[],
+  sentence: string,
+  tokens: string[],
+  topk_m1: [string, number][][],
+  topk_m2: [string, number][][],
+  inverse_order?: boolean
 }
 
 export type AnalyzeResponse = {
-    request: { m1: string, m2: string, text: string },
-    result: AnalyzedText
+  request: { m1: string, m2: string, text: string },
+  result: AnalyzedText
 }
 
 interface SuggestionResponse {
-    request: {
-        m1: string, m2: string, corpus: string
-    },
-    result: {
-        [key: string]: {
-            probs: {
-                clamped_m1_larger_elementwise: SuggestionProps[],
-                clamped_m2_larger_elementwise: SuggestionProps[],
-                max_elementwise: SuggestionProps[],
-                clamped_max_elementwise: SuggestionProps[]
-            },
-            ranks: {
-                clamped_m1_larger_elementwise: SuggestionProps[],
-                clamped_m2_larger_elementwise: SuggestionProps[],
-                max_elementwise: SuggestionProps[],
-                clamped_max_elementwise: SuggestionProps[]
-            },
-            inverse_order: boolean,
-            m1: string,
-            m2: string
+  request: {
+    m1: string, m2: string, corpus: string
+  },
+  result: {
+    [key: string]: {
+      probs: {
+        clamped_m1_larger_elementwise: SuggestionProps[],
+        clamped_m2_larger_elementwise: SuggestionProps[],
+        max_elementwise: SuggestionProps[],
+        clamped_max_elementwise: SuggestionProps[]
+      },
+      ranks: {
+        clamped_m1_larger_elementwise: SuggestionProps[],
+        clamped_m2_larger_elementwise: SuggestionProps[],
+        max_elementwise: SuggestionProps[],
+        clamped_max_elementwise: SuggestionProps[]
+      },
+      inverse_order: boolean,
+      m1: string,
+      m2: string
 
-        }
     }
+  }
 }
 
 
@@ -106,6 +111,8 @@ export class API {
     if (corpus) {
       payload["corpus"] = corpus;
     }
+
+
     return d3.json(this.baseURL + '/suggestions', {
       method: "POST",
       body: JSON.stringify(payload),
@@ -126,14 +133,20 @@ export class API {
     const payload = {
       m1, m2, text
     }
-    return d3.json(this.baseURL + '/analyze', {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    });
 
+    if (debug) {
+      return new Promise((resole) => {
+        resole(response as any)
+      })
+    } else {
+      return d3.json(this.baseURL + '/analyze', {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8"
+        }
+      });
+    }
   }
 
 

@@ -36,7 +36,7 @@
 export default {
   name: 'NavBar',
   props: {
-    allModels: {},
+    allModels: Array,
     selectedM1: String,
     selectedM2: String
   },
