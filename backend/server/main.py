@@ -126,8 +126,8 @@ def get_available_datasets():
     return ["glue_mrpc_1+2"]
 
 
-@app.get("/api/all-projects")
-def get_all_projects():
+@app.get("/api/all-models")
+def get_all_models():
     res = [
         {"model": "gpt2"},
         {"model": "distilgpt2"},
