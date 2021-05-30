@@ -1,6 +1,7 @@
 from typing import *
 import numpy as np
-from transformers import AutoModelForCausalLM, AutoTokenizer
+import transformers
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, AutoModelWithLMHead
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from hashlib import sha256
 # from server.utils import jsonify_np # Circular import issues
@@ -10,61 +11,78 @@ import torch
 import h5py
 from dataclasses import dataclass
 
-def get_group(f:Union[h5py.File, h5py.Group], gname:str):
+
+def get_group(f: Union[h5py.File, h5py.Group], gname: str):
     if gname in f.keys():
         return f[gname]
     return f.create_group(gname)
-    
-#!! Monkey patching
+
+
+# !! Monkey patching
 h5py.File.get_group = get_group
 h5py.Group.get_group = get_group
 
+
 class AnalysisLMPipelineForwardOutput(CausalLMOutputWithCrossAttentions):
-    def __init__(self, phrase:str, in_ids:torch.tensor, **kwargs):
+    def __init__(self, phrase: str, in_ids: torch.tensor, **kwargs):
         super().__init__(**kwargs)
         self.N = len(in_ids)
         self.in_ids = in_ids
         self.phrase = phrase
 
+
 class AutoLMPipeline():
     def __init__(self, model, tokenizer):
-        self.model = model
+        self.model: transformers.PreTrainedModel = model
         self.device = self.model.device
-        self.tokenizer = tokenizer
+        self.tokenizer: transformers.PreTrainedTokenizer = tokenizer
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
 
         # s = str(frozenset(self.tokenizer.vocab.items()))
         # self.vocab_hash = sha256(s.encode('utf-8')).hexdigest()
         self.vocab_hash = str(hash(frozenset(self.tokenizer.vocab.items())))
-                
+
     @classmethod
     def from_pretrained(cls, name_or_path):
         """Create a model and tokenizer from a single name, passing arguemnts to `from_pretrained` of the AutoTokenizer and AutoModel"""
-        model = AutoModelForCausalLM.from_pretrained(name_or_path)
+        model = AutoModelWithLMHead.from_pretrained(name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(name_or_path)
         return cls(model, tokenizer)
 
     def for_model(self, s):
-        iids = self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")['input_ids']
+        # iids = \
+        #     self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")[
+        #         'input_ids']
+        iids = self.tokenizer.encode(s, return_tensors="pt")[0]
         return iids
-    
-    def for_model_batch(self, s:List[str]):
+
+    def for_model_batch(self, s: List[str]):
         ii = self.tokenizer.batch_encode_plus(s)['input_ids']
         input = self.tokenizer.prepare_for_model(ii, return_tensors="pt", padding=True)
 
         return input
-    
+
     def forward(self, s) -> AnalysisLMPipelineForwardOutput:
+        is_auto_regressive = self.model.config.model_type.startswith('gpt')
         with torch.no_grad():
-            tids = self.for_model(s)
-            
+
+            if is_auto_regressive:
+                # autoregressive ==> add BOE
+                tids = self.for_model(self.tokenizer.bos_token + s)
+            else:
+                tids = self.for_model(s)
+
             output = self.model(tids, output_attentions=True)
+            if is_auto_regressive:
+                output.logits = output.logits[:-1]
+                tids = tids[1:]
+
             new_output = AnalysisLMPipelineForwardOutput(s, tids, **output.__dict__)
-        
+
         return new_output
-    
-    def idmat2tokens(self, idmat:torch.tensor) -> List[str]:
+
+    def idmat2tokens(self, idmat: torch.tensor) -> List[str]:
         """ Convert arbitrarily nested IDs into tokens """
         output = []
         for i, idlist in enumerate(idmat):
@@ -72,15 +90,17 @@ class AutoLMPipeline():
                 output.append(self.tokenizer.convert_ids_to_tokens(idlist))
         return output
 
+
 @dataclass
 class LMAnalysisOutputH5:
-    token_ids: np.array # N
-    ranks: np.array # N,
-    probs: np.array # N,
-    topk_prob_values: np.array # k, N
-    topk_token_ids: np.array # k, N
-    attention: np.array # Layer, Head, N, N
+    token_ids: np.array  # N
+    ranks: np.array  # N,
+    probs: np.array  # N,
+    topk_prob_values: np.array  # k, N
+    topk_token_ids: np.array  # k, N
+    attention: np.array  # Layer, Head, N, N
     phrase: str
+
     # Add attributes
 
     @classmethod
@@ -94,8 +114,8 @@ class LMAnalysisOutputH5:
             attention=np.array(grp['attention']),
             phrase=grp.attrs['phrase']
         )
-    
-    def save_to_h5group(self, h5group:h5py.Group):
+
+    def save_to_h5group(self, h5group: h5py.Group):
         h5group.create_dataset("token_ids", data=self.token_ids)
         h5group.create_dataset("ranks", data=self.ranks)
         h5group.create_dataset("probs", data=self.probs)
@@ -115,17 +135,17 @@ class LMAnalysisOutputH5:
     #         "phrase": self.phrase
     #     }
 
-    
+
 @dataclass
 class LMAnalysisOutput:
-    token_ids: torch.tensor # N,
-    ranks: torch.tensor # N,
-    probs: torch.tensor # N,
-    topk_prob_values: torch.tensor # k, N
-    topk_token_ids: torch.tensor # k, N
-    attention: torch.tensor # Layer, Head, N, N
+    token_ids: torch.tensor  # N,
+    ranks: torch.tensor  # N,
+    probs: torch.tensor  # N,
+    topk_prob_values: torch.tensor  # k, N
+    topk_token_ids: torch.tensor  # k, N
+    attention: torch.tensor  # Layer, Head, N, N
     phrase: str
-        
+
     def for_h5(self):
         return LMAnalysisOutputH5(
             token_ids=self.token_ids.cpu().numpy().astype(np.int64),
@@ -136,27 +156,28 @@ class LMAnalysisOutput:
             attention=self.attention.cpu().numpy().astype(np.float32),
             phrase=self.phrase,
         )
-        
-    def save_to_h5group(self, h5group:h5py.Group):
+
+    def save_to_h5group(self, h5group: h5py.Group):
         self.for_h5().save_to_h5group(h5group)
         return h5group
-    
 
-def collect_analysis_info(model_output:AnalysisLMPipelineForwardOutput, k=10) -> LMAnalysisOutput:
+
+def collect_analysis_info(model_output: AnalysisLMPipelineForwardOutput, k=10) -> LMAnalysisOutput:
     """
     Analyze the output of a language model for probabilities and ranks
-    
+
     Args:
         model_output: The output of the causal Language Model
         k: The number of top probabilities we care about
     """
     probs = torch.softmax(model_output.logits, dim=1)
-    ranks = (torch.argsort(model_output.logits, dim=1, descending=True) == model_output.in_ids.unsqueeze(1).expand_as(model_output.logits)).nonzero()[:,1]
+    ranks = (torch.argsort(model_output.logits, dim=1, descending=True) == model_output.in_ids.unsqueeze(
+        1).expand_as(model_output.logits)).nonzero()[:, 1]
     phrase_probs = probs[torch.arange(model_output.N), model_output.in_ids]
-#     topk_logit_values, topk_logit_inds = torch.topk(output.logits, k=k, dim=1)
+    #     topk_logit_values, topk_logit_inds = torch.topk(output.logits, k=k, dim=1)
     topk_prob_values, topk_prob_inds = torch.topk(probs, k=k, dim=1)
-    attention = torch.cat(model_output.attentions, dim=0) # Layer, Head, N, N
-    
+    attention = torch.cat(model_output.attentions, dim=0)  # Layer, Head, N, N
+
     return LMAnalysisOutput(
         phrase=model_output.phrase,
         token_ids=model_output.in_ids,
@@ -167,7 +188,8 @@ def collect_analysis_info(model_output:AnalysisLMPipelineForwardOutput, k=10) ->
         attention=attention,
     )
 
-def analyze_text(text:str, pp1:AutoLMPipeline, pp2:AutoLMPipeline, topk=10):
+
+def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
     assert pp1.vocab_hash == pp2.vocab_hash, "Vocabularies of the two pipelines must align"
 
     tokens = pp1.tokenizer.tokenize(text)
@@ -183,14 +205,14 @@ def analyze_text(text:str, pp1:AutoLMPipeline, pp2:AutoLMPipeline, topk=10):
         "m1": {
             "rank": parsed_output1.ranks,
             "prob": parsed_output1.probs,
-            "topk": pp1.idmat2tokens(parsed_output1.topk_token_ids), # Turn to str
-            "attentions": parsed_output1.attention
+            "topk": pp1.idmat2tokens(parsed_output1.topk_token_ids),  # Turn to str
+            # "attentions": parsed_output1.attention
         },
         "m2": {
             "rank": parsed_output2.ranks,
             "prob": parsed_output2.probs,
-            "topk": pp2.idmat2tokens(parsed_output2.topk_token_ids), # Turn to str
-            "attentions": parsed_output2.attention
+            "topk": pp2.idmat2tokens(parsed_output2.topk_token_ids),  # Turn to str
+            # "attentions": parsed_output2.attention
         },
         "diff": {
             "rank": parsed_output2.ranks - parsed_output1.ranks,
