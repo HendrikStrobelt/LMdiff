@@ -54,7 +54,7 @@ class AutoLMPipeline():
         # iids = \
         #     self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")[
         #         'input_ids']
-        iids = self.tokenizer.encode(s, return_tensors="pt")[0]
+        iids = self.tokenizer.encode(s, return_tensors="pt")
         return iids
 
     def for_model_batch(self, s: List[str]):
@@ -74,6 +74,8 @@ class AutoLMPipeline():
                 tids = self.for_model(s)
 
             output = self.model(tids, output_attentions=True)
+            output.logits = output.logits.squeeze()
+            tids = tids.squeeze()
             if is_auto_regressive:
                 output.logits = output.logits[:-1]
                 tids = tids[1:]
