@@ -84,7 +84,7 @@ class AutoLMPipeline():
 
         return new_output
 
-    def idmat2tokens(self, idmat: torch.tensor) -> List[str]:
+    def idmat2tokens(self, idmat: torch.tensor) -> List[List[str]]:
         """ Convert arbitrarily nested IDs into tokens """
         output = []
         for i, idlist in enumerate(idmat):
@@ -191,6 +191,14 @@ def collect_analysis_info(model_output: AnalysisLMPipelineForwardOutput, k=10) -
     )
 
 
+def zipTopK(tokens_topk: List[List[str]], probs):
+    res = []
+    for i, topks in enumerate(tokens_topk):
+        res.append(list(zip(topks, probs[i].tolist())))
+
+    return res
+
+
 def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
     assert pp1.vocab_hash == pp2.vocab_hash, "Vocabularies of the two pipelines must align"
 
@@ -201,24 +209,29 @@ def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
     parsed_output1 = collect_analysis_info(output1, k=topk)
     parsed_output2 = collect_analysis_info(output2, k=topk)
 
+
+    def clamp(arr, max_rank=50):
+        return np.clip(arr, 0, max_rank)
+
     return {
         "text": text,
         "tokens": tokens,
         "m1": {
             "rank": parsed_output1.ranks,
             "prob": parsed_output1.probs,
-            "topk": pp1.idmat2tokens(parsed_output1.topk_token_ids),  # Turn to str
+            "topk": zipTopK(pp1.idmat2tokens(parsed_output1.topk_token_ids), parsed_output1.topk_prob_values),  # Turn to str
             # "attentions": parsed_output1.attention
         },
         "m2": {
             "rank": parsed_output2.ranks,
             "prob": parsed_output2.probs,
-            "topk": pp2.idmat2tokens(parsed_output2.topk_token_ids),  # Turn to str
+            "topk": zipTopK(pp2.idmat2tokens(parsed_output2.topk_token_ids), parsed_output2.topk_prob_values),  # Turn to str
             # "attentions": parsed_output2.attention
         },
         "diff": {
             "rank": parsed_output2.ranks - parsed_output1.ranks,
             "prob": parsed_output2.probs - parsed_output1.probs,
+            "rank_clamp": clamp(parsed_output2.ranks) - clamp(parsed_output1.ranks)
             # "kl": kl_div(parsed_output1.probs, parsed_output2.probs, reduction="sum") # No meaning
         }
     }
