@@ -59,7 +59,8 @@ const diff_Dimensions: {
       discrete: boolean,
       name: string,
       reverse?: boolean,
-      diff?: string[]
+      diff?: string[],
+      access:string
     }
 } = {
   diff: {
@@ -67,45 +68,53 @@ const diff_Dimensions: {
     colorScale: standard_scale,
     valueScale: val_standard_scale,
     name: "Probability Diff",
-    diff: [standard_scale(-.5), standard_scale(0.5)]
+    diff: [standard_scale(-.5), standard_scale(0.5)],
+    access:"diff.prob"
   },
   prob_m1: {
     discrete: false,
     colorScale: uni_scale,
     valueScale: val_uni_scale,
-    name: "Probability M1"
+    name: "Probability M1",
+    access:'m1.prob'
   },
   prob_m2: {
     discrete: false,
     colorScale: uni_scale,
     valueScale: val_uni_scale,
-    name: "Probability M2"
+    name: "Probability M2",
+    access:'m2.prob'
   },
   rank_m1: {
     discrete: true,
     colorScale: thScale,
     valueScale: val_thScale,
-    name: "Rank M1"
+    name: "Rank M1",
+    access:'m1.rank'
+
   },
   rank_m2: {
     discrete: true,
     colorScale: thScale,
     valueScale: val_thScale,
-    name: "Rank M2"
+    name: "Rank M2",
+    access:'m2.rank'
   },
   rank_diff: {
     discrete: true,
     reverse: true,
     colorScale: rankDiffScale,
     valueScale: val_rankDiffScale,
-    name: "Rank Diff"
+    name: "Rank Diff",
+    access:'diff.rank'
   },
   rank_diff_clamped: {
     discrete: true,
     reverse: true,
     colorScale: rankDiffScaleClamped,
     valueScale: val_rankDiffScaleClamped,
-    name: "Clamped Rank Diff"
+    name: "Clamped Rank Diff",
+    access:'diff.rank'
   },
 }
 

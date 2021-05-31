@@ -102,12 +102,12 @@
 
 <script lang="ts">
 import {defineComponent, reactive, ref, watch} from 'vue'
-import {AnalyzedText, API} from "./api";
+import {AnalyzedText, AnalyzeTextResponse, API} from "./api";
 import LineGraph from "./components/LineGraph.vue";
 import NavBar from "./components/NavBar.vue";
 import {scalePow} from "d3"
 import diffModes from "./etc/diffModes";
-import {sortBy} from "lodash"
+import {get, sortBy} from "lodash"
 import InteractiveTokens, {
   ModelTokenInfo,
   TokenInfo
@@ -132,7 +132,7 @@ export default defineComponent({
     const probValues = ref([] as number[][])
     const rankValues = ref([] as number[][])
     const hoverID = ref(-1)
-    let currentResult = null as AnalyzedText;
+    let currentResult = null as AnalyzeTextResponse;
 
     const availableDiffModes: { key: string, name: string }[] =
         sortBy(Object.entries(diffModes)
@@ -178,11 +178,11 @@ export default defineComponent({
           customText.value
       ).then(resp => {
         states.analyzeRequestSent = false;
-        currentResult = resp.result;
+        currentResult = resp;
         updateTokenVis();
-        const r = resp.result.prob;
-        probValues.value = [r.prob_m1, r.prob_m2]
-        rankValues.value = [r.rank_m1, r.rank_m2]
+        const r = resp.result;
+        probValues.value = [r.m1.prob, r.m2.prob]
+        rankValues.value = [r.m1.rank, r.m2.rank]
 
 
         console.log(resp.result, "--- resp.result");
@@ -191,30 +191,33 @@ export default defineComponent({
     }
 
     const updateTokenVis = async () => {
-      const r = currentResult.prob;
+      const r = currentResult.result;
       // console.log(r,"--- r");
       const modelTokenInfo = (index, modelID = 'm1'): ModelTokenInfo => {
         return {
-          prob: r['prob_' + modelID][index],
-          rank: r['rank_' + modelID][index],
-          topk: r['topk_' + modelID][index]
+          prob: r[modelID].prob[index],
+          rank: r[modelID].rank[index],
+          topk: r[modelID].topk[index].map(d => [d,1]),
         }
       }
 
-      tokenList.value = currentResult.tokens.map((token, i) => ({
-        token,
-        value: r[currentDiffMode.value][i] as number,
-        color: diffModes[currentDiffMode.value]
-            .colorScale(r[currentDiffMode.value][i]),
-        m1: modelTokenInfo(i, 'm1'),
-        m2: modelTokenInfo(i, 'm2'),
-        diff: {
-          rank: r['rank_diff'][i],
-          rank_clamped: r['rank_diff_clamped'][i],
-          prob: r['diff'][i]
-        }
-        // properties: get_prob(i)
-      } as TokenInfo));
+      tokenList.value = currentResult.result.tokens.map((token, i) => {
+        const value = get(r, diffModes[currentDiffMode.value].access)[i] as number;
+        return {
+          token,
+          value,
+          color: diffModes[currentDiffMode.value]
+              .colorScale(value),
+          m1: modelTokenInfo(i, 'm1'),
+          m2: modelTokenInfo(i, 'm2'),
+          diff: {
+            rank: r.diff.rank[i],
+            rank_clamped: r.diff.rank[i],
+            prob: r.diff.prob[i]
+          }
+          // properties: get_prob(i)
+        } as TokenInfo
+      });
     }
 
     watch(currentDiffMode, () => {

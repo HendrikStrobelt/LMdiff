@@ -71,21 +71,19 @@ interface SuggestionResponse {
   }
 }
 
+interface PerModelInfo {
+  prob: number[];
+  rank: number [];
+  topk: string [][];
+}
+
 export interface Sample {
   diff: {
     prob: number[],
     rank: number[]
   }
-  m1: {
-    prob: number[],
-    rank: number [],
-    topk: string [][]
-  },
-  m2: {
-    prob: number[],
-    rank: number [],
-    topk: string [][]
-  }
+  m1: PerModelInfo,
+  m2: PerModelInfo
   example_idx: number,
   metrics: {
     avg_clamped_rank_diff: 10.182
@@ -99,7 +97,7 @@ export interface Sample {
     max_topk_diff: 8
     n_tokens: 22
   },
-  text:string,
+  text: string,
   tokens: string[]
 }
 
@@ -107,6 +105,17 @@ export interface FindSampleResponse {
   request: any,
   result: Sample[]
 }
+
+export interface AnalyzeTextResponse {
+  request: { m1: string, m2: string, text: string }
+  result: {
+    tokens: string[],
+    m1: PerModelInfo,
+    m2: PerModelInfo,
+    diff: { rank: number[], prob: number[] }
+  }
+}
+
 
 /**
  * ==== API Object =====
@@ -189,7 +198,7 @@ export class API {
    * @param m2 - Model 2 ID
    * @param text - the text
    */
-  public analyze(m1: string, m2: string, text: string): Promise<AnalyzeResponse> {
+  public analyze(m1: string, m2: string, text: string): Promise<AnalyzeTextResponse> {
     const payload = {
       m1, m2, text
     }
@@ -199,7 +208,7 @@ export class API {
         resole(response as any)
       })
     } else {
-      return d3.json(this.baseURL + '/analyze', {
+      return d3.json(this.baseURL + '/analyze-text', {
         method: "POST",
         body: JSON.stringify(payload),
         headers: {
