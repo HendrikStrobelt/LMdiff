@@ -30,7 +30,7 @@ def custom_dir(c, add):
 
 class GetAttr:
     """Base class for attr accesses in `self._xtra` passed down to `self.default`
-    
+
     Taken from article by Jeremy Howard: https://www.fast.ai/2019/08/06/delegation/
 
     Usage:
@@ -60,7 +60,7 @@ class GetAttr:
 # Can i add a new docstring to the existing docstring of the delgated function? Or at least point to the function delegated?
 def delegates(to=None, keep=False):
     """ Decorator: replace `**kwargs` in signature with params from `to`.
-    
+
     Taken from article by Jeremy Howard: https://www.fast.ai/2019/08/06/delegation/
     """
 
@@ -93,7 +93,7 @@ def pick(keys: Union[List, Set], obj: Dict) -> Dict:
 
 def memoize(f):
     """Memoize a function.
-    
+
     Use lookup table when the same inputs are passed to the function instead of running that function again
     """
     memo = {}
@@ -114,8 +114,8 @@ def assoc(k, v, orig):
 
 
 def make_unique(f):
-    """The input function will only run and return if it hasn't seen its argument before. 
-    
+    """The input function will only run and return if it hasn't seen its argument before.
+
     Otherwise, it will return `None`.
     """
     s = set()
@@ -133,7 +133,7 @@ def flatten_(items, seqtypes=(list, tuple)):
     """Flattten an arbitrarily nested list IN PLACE"""
     for i, x in enumerate(items):
         while i < len(items) and isinstance(items[i], seqtypes):
-            items[i : i + 1] = items[i]
+            items[i: i + 1] = items[i]
     return items
 
 
@@ -175,6 +175,8 @@ def deepdict_to_json(x, ndigits=3, force_float=False):
     """Convert a nested dictionary to a jsonable object, rounding items as necessary"""
     if isinstance(x, torch.Tensor) or isinstance(x, np.ndarray):
         return round_nested_list(x.tolist(), ndigits, force_float)
+    elif isinstance(x, list) or isinstance(x, tuple):
+        return [deepdict_to_json(i, ndigits, force_float) for i in x]
     elif isinstance(x, float):
         return round(x, ndigits)
     elif isinstance(x, dict):
