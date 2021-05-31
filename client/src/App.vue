@@ -137,7 +137,7 @@ export default defineComponent({
     const availableDiffModes: { key: string, name: string }[] =
         sortBy(Object.entries(diffModes)
             .map(([key, v]) => ({key, name: v.name})), ['key'])
-    const currentDiffMode = ref('diff')
+    const currentDiffMode = ref('rank_diff_clamped')
 
     const datasets = ref([] as string[])
     const currentDataset = ref('')
@@ -197,7 +197,7 @@ export default defineComponent({
         return {
           prob: r[modelID].prob[index],
           rank: r[modelID].rank[index],
-          topk: r[modelID].topk[index].map(d => [d,1]),
+          topk: r[modelID].topk[index],
         }
       }
 
@@ -212,7 +212,7 @@ export default defineComponent({
           m2: modelTokenInfo(i, 'm2'),
           diff: {
             rank: r.diff.rank[i],
-            rank_clamped: r.diff.rank[i],
+            rank_clamped: r.diff.rank_clamp[i],
             prob: r.diff.prob[i]
           }
           // properties: get_prob(i)

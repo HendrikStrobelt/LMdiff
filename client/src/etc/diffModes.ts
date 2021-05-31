@@ -114,7 +114,7 @@ const diff_Dimensions: {
     colorScale: rankDiffScaleClamped,
     valueScale: val_rankDiffScaleClamped,
     name: "Clamped Rank Diff",
-    access:'diff.rank'
+    access:'diff.rank_clamp'
   },
 }
 

@@ -74,7 +74,7 @@ interface SuggestionResponse {
 interface PerModelInfo {
   prob: number[];
   rank: number [];
-  topk: string [][];
+  topk: [string, number] [][];
 }
 
 export interface Sample {
@@ -112,7 +112,7 @@ export interface AnalyzeTextResponse {
     tokens: string[],
     m1: PerModelInfo,
     m2: PerModelInfo,
-    diff: { rank: number[], prob: number[] }
+    diff: { rank: number[], prob: number[], rank_clamp: number[] }
   }
 }
 
