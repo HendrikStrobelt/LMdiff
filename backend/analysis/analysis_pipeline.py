@@ -80,6 +80,10 @@ class AutoLMPipeline():
                 output.logits = output.logits[:-1]
                 tids = tids[1:]
 
+                # SWAP THE BELOW LINES IF WE PREFER THE OTHER FUNCTIONALITY
+                output.attentions = [a[:,:,1:, 1:] for a in output.attentions]
+                # output.attentions = [a[:,:,:-1, :-1] for a in output.attentions]
+
             new_output = AnalysisLMPipelineForwardOutput(s, tids, **output.__dict__)
 
         return new_output

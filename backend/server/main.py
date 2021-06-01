@@ -137,6 +137,29 @@ def get_all_models():
 
     return res
 
+@app.post("/api/specific-attention")
+def specific_attention(payload:types.SpecificAttentionRequest):
+    pp1 = get_pipeline(payload.m1)
+    pp2 = get_pipeline(payload.m2)
+
+    output1 = pp1.forward(payload.text)
+    output2 = pp2.forward(payload.text)
+
+    att1 = torch.cat(output1.attentions)
+    att2 = torch.cat(output2.attentions)
+
+    idx = payload.token_index_in_text
+    if payload.outward_attentions:
+        a1 = att1[:,:,idx, :]
+        a2 = att2[:,:,idx, :]
+    else:
+        a1 = att1[:,:,:, idx]
+        a2 = att2[:,:,:, idx]
+
+    return {
+        "m1": deepdict_to_json(a1, ndigits=4, force_float=True),
+        "m2": deepdict_to_json(a2, ndigits=4, force_float=True)
+    }
 
 @app.get("/api/new-suggestions")
 def new_suggestions(
@@ -248,11 +271,11 @@ def get_suggestions(m1: str, m2: str, corpus: str = "wiki_split"):
 
 @app.post("/api/analyze-text")
 def analyze_models_on_text(payload: types.AnalyzeRequest):
-    m1 = payload.get("m1")
-    m2 = payload.get("m2")
+    m1 = payload.m1
+    m2 = payload.m2
     pp1 = get_pipeline(m1)
     pp2 = get_pipeline(m2)
-    text = payload.get("text")
+    text = payload.text
     output = analyze_text(text, pp1, pp2)
     result = deepdict_to_json(output, ndigits=4)
 
@@ -262,9 +285,9 @@ def analyze_models_on_text(payload: types.AnalyzeRequest):
 
 @app.post("/api/analyze")
 def analyze(payload: types.AnalyzeRequest):
-    m1 = payload.get("m1")
-    m2 = payload.get("m2")
-    text = payload.get("text")
+    m1 = payload.m1
+    m2 = payload.m2
+    text = payload.text
 
     # TODO: hacky cache
     c_key = str(m1) + str(m2) + text

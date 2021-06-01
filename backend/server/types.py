@@ -1,24 +1,19 @@
 from pydantic import BaseModel
-import numpy as np
 from typing import *
 
-class HashableBaseModel(BaseModel):
-    def __hash__(self):
-        return hash(self.json())
-
-    @classmethod
-    def validate(cls, v: np.ndarray):
-        return v
-
-class GoodbyePayload(HashableBaseModel):
-    firstname:str
-
-class SuggestionsRequest(HashableBaseModel):
+class SuggestionsRequest(BaseModel):
     m1: str
     m2: str
     corpus: str
 
-class AnalyzeRequest(HashableBaseModel):
+class AnalyzeRequest(BaseModel):
     m1: str
     m2: Optional[str]=None
     text: str
+
+class SpecificAttentionRequest(BaseModel):
+    m1: str
+    m2: str
+    text: str
+    token_index_in_text: int
+    outward_attentions: bool = True # If true, return the attentions out of that token. If false, return attention toward that token from the other tokens
