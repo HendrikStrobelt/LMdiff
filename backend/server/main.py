@@ -59,6 +59,9 @@ def get_args():
     args, _ = parser.parse_known_args()
     return args
 
+@lru_cache
+def list_all_datasets():
+    return [p.stem.split(pf.ANALYSIS_DELIM) for p in pf.ANALYSIS.glob("*.h5")]
 
 app = FastAPI()
 app.add_middleware(
@@ -122,9 +125,15 @@ def send_data(path):
 ## MAIN API ##
 # ======================================================================
 @app.get("/api/available-datasets")
-def get_available_datasets():
-    return ["glue_mrpc_1+2"]
+def get_available_datasets(m1: str, m2:str):
+    if m1 == '' or m2 == '':
+        return []
 
+    h5paths = list_all_datasets()
+    m1_h5 = set([p[0] for p in h5paths if p[1] == m1])
+    m2_h5 = set([p[0] for p in h5paths if p[1] == m2])
+    available_datasets = list(m1_h5.intersection(m2_h5))
+    return available_datasets
 
 @app.get("/api/all-models")
 def get_all_models():

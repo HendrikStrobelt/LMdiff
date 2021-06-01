@@ -146,7 +146,8 @@ export class API {
    * get a list of all available preprocessed datasets
    */
   public all_ds(m1: string = null, m2: string = null): Promise<string[]> {
-    return d3.json(this.baseURL + '/available-datasets')
+    const url = makeUrl(this.baseURL + "/available-datasets", {m1, m2})
+    return d3.json(url)
   }
 
   public findSamples(m1: string, m2: string, dataset: string, metric: string,

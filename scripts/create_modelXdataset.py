@@ -11,6 +11,7 @@ import h5py
 from analysis.analysis_pipeline import AutoLMPipeline, collect_analysis_info
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
 from analysis.text_dataset import TextDataset
+import path_fixes as pf
 
 
 parser = argparse.ArgumentParser()
@@ -21,11 +22,11 @@ parser.add_argument(
 )
 parser.add_argument("dataset_path", type=str, help="Path to dataset file")
 parser.add_argument(
-    "--output_f",
+    "--output_d",
     "-o",
     type=str,
-    default=None,
-    help="Where to store the output h5 file. If not provided or is the name of existing directory, create using name of provided ds and model",
+    default=str(pf.ANALYSIS),
+    help="Which directory to store the output h5 file (default is the required config for this project). The name of the file is created using the name of provided dataset and model",
 )
 parser.add_argument(
     "--force_overwrite",
@@ -103,17 +104,13 @@ def create_analysis_results(
 dataset_path = Path(args.dataset_path)
 
 if args.first_n is None:
-    default_name = f"{dataset_path.stem}_{args.model_name}.h5"
+    default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{args.model_name}.h5"
 else:
-    default_name = f"{dataset_path.stem}_{args.model_name}_first{args.first_n}.h5"
+    default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{args.model_name}_first{args.first_n}.h5"
 
-if args.output_f is None:
-    output_name = Path(default_name)
-elif Path(args.output_f).is_dir():
-    output_name = Path(args.output_f) / default_name
-else:
-    output_name = Path(args.output_f)
-output_f = Path(output_name)
+output_d = pf.ANALYSIS if args.output_d is None else Path(args.output_d)
+output_d.mkdir(parents=True, exist_ok=True)
+output_f = output_d / default_name
 output_f.parent.mkdir(parents=True, exist_ok=True)
 
 create_analysis_results(

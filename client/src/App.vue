@@ -101,7 +101,7 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, reactive, ref, watch} from 'vue'
+import {defineComponent, reactive, ref, watch, watchEffect} from 'vue'
 import {AnalyzedText, AnalyzeTextResponse, API} from "./api";
 import LineGraph from "./components/LineGraph.vue";
 import NavBar from "./components/NavBar.vue";
@@ -164,10 +164,13 @@ export default defineComponent({
       }
     })
 
-    api.all_ds().then(res => {
-      datasets.value = res;
-      currentDataset.value = res[0];
+    watchEffect(() => {
+      api.all_ds(selectedM1.value, selectedM2.value).then(res => {
+        datasets.value = res;
+        currentDataset.value = res[0];
+      })
     })
+
 
     const analyzeText = () => {
       states.analyzeRequestSent = true;
