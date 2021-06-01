@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
-import server.api as api
+import server.types as types
 from server.utils import deepdict_to_json, SortOrder
 from analysis import AutoLMPipeline, analyze_text
 import path_fixes as pf
@@ -247,7 +247,7 @@ def get_suggestions(m1: str, m2: str, corpus: str = "wiki_split"):
 
 
 @app.post("/api/analyze-text")
-def analyze_models_on_text(payload: api.AnalyzeRequest):
+def analyze_models_on_text(payload: types.AnalyzeRequest):
     m1 = payload.get("m1")
     m2 = payload.get("m2")
     pp1 = get_pipeline(m1)
@@ -261,7 +261,7 @@ def analyze_models_on_text(payload: api.AnalyzeRequest):
 
 
 @app.post("/api/analyze")
-def analyze(payload: api.AnalyzeRequest):
+def analyze(payload: types.AnalyzeRequest):
     m1 = payload.get("m1")
     m2 = payload.get("m2")
     text = payload.get("text")
