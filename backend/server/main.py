@@ -40,7 +40,7 @@ def get_comparison_results(m1: str, m2: str, dataset: str):
 
 @lru_cache
 def get_analysis_results(dataset: str, mname: str):
-    return H5AnalysisResultDataset.from_file(str(pf.ANALYSIS / f"{dataset}_{mname}.h5"))
+    return H5AnalysisResultDataset.from_file(str(pf.ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{mname}.h5"))
 
 
 @lru_cache

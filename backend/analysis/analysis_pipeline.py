@@ -1,4 +1,5 @@
 from typing import *
+import pickle
 import numpy as np
 import transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, AutoModelWithLMHead
@@ -22,6 +23,10 @@ def get_group(f: Union[h5py.File, h5py.Group], gname: str):
 h5py.File.get_group = get_group
 h5py.Group.get_group = get_group
 
+def list2consistent_hash(lst):
+    """Convert a sortable, shallow list to a consistent hash"""
+    bstr = pickle.dumps(sorted(lst))
+    return sha256(bstr).hexdigest()
 
 class AnalysisLMPipelineForwardOutput(CausalLMOutputWithCrossAttentions):
     def __init__(self, phrase: str, in_ids: torch.tensor, **kwargs):
@@ -38,10 +43,7 @@ class AutoLMPipeline():
         self.tokenizer: transformers.PreTrainedTokenizer = tokenizer
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
-
-        # s = str(frozenset(self.tokenizer.vocab.items()))
-        # self.vocab_hash = sha256(s.encode('utf-8')).hexdigest()
-        self.vocab_hash = str(hash(frozenset(self.tokenizer.vocab.items())))
+        self.vocab_hash = list2consistent_hash(self.tokenizer.vocab.items())
 
     @classmethod
     def from_pretrained(cls, name_or_path):
@@ -51,9 +53,6 @@ class AutoLMPipeline():
         return cls(model, tokenizer)
 
     def for_model(self, s):
-        # iids = \
-        #     self.tokenizer.prepare_for_model(self.tokenizer.encode(s), return_tensors="pt")[
-        #         'input_ids']
         iids = self.tokenizer.encode(s, return_tensors="pt")
         return iids
 

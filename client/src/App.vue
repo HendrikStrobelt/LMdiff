@@ -171,6 +171,12 @@ export default defineComponent({
       })
     })
 
+    watchEffect(() => {
+      api.getSpecificAttentions(selectedM1.value, selectedM2.value, "This is bogus attentions", 2).then(res => {
+        console.log("res stuff: ", res)
+      })
+    })
+
 
     const analyzeText = () => {
       states.analyzeRequestSent = true;

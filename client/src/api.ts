@@ -116,6 +116,11 @@ export interface AnalyzeTextResponse {
   }
 }
 
+export interface SpecificAttentionsResponse{
+  m1: number[][][]
+  m2: number[][][]
+}
+
 
 /**
  * ==== API Object =====
@@ -157,40 +162,14 @@ export class API {
     }
 
     return d3.json(makeUrl(this.baseURL + '/new-suggestions', payload))
-    // return d3.json(this.baseURL + '/new-suggestions', {
-    //   method: "POST",
-    //   body: JSON.stringify(payload),
-    //   headers: {
-    //     "Content-type": "application/json; charset=UTF-8"
-    //   }
-    // });
-
   }
 
-
-  /***
-   * get suggestions for good examples
-   * @param m1 - Model 1
-   * @param m2 - Model 2
-   * @param corpus - corpus used for sampling
-   */
-  public suggestions(m1: string, m2: string, corpus: string = null): Promise<SuggestionResponse> {
+  public getSpecificAttentions(m1: string, m2: string, text: string, token_index_in_text: number): Promise<SpecificAttentionsResponse> {
     const payload = {
-      m1, m2
-    }
-    if (corpus) {
-      payload["corpus"] = corpus;
+      m1, m2, text, token_index_in_text
     }
 
-
-    return d3.json(this.baseURL + '/suggestions', {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers: {
-        "Content-type": "application/json; charset=UTF-8"
-      }
-    });
-
+    return d3.json(this.baseURL + '/specific-attention', toPayload(payload))
   }
 
   /**

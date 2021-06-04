@@ -1,7 +1,7 @@
 """
 Example Usage: 
 
-python scripts/create_modelXdataset.py distilgpt2 data/datasets/glue_mrpc_1+2.txt -o data/analysis_results --force_overwrite
+python scripts/create_modelXdataset.py distilgpt2 data/datasets/glue_mrpc_1+2.txt --force_overwrite
 """
 import argparse
 from pathlib import Path
