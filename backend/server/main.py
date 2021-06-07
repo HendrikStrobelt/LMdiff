@@ -124,6 +124,23 @@ def send_data(path):
 # ======================================================================
 ## MAIN API ##
 # ======================================================================
+@app.get("/api/get-comparable-models")
+def get_comparable_models(m: str):
+    """Find all comparable models to a given model string name"""
+
+    COMPARABLE_MODELS = [
+        set('gpt2', 'distilgpt2'),
+        set('bert', 'distilbert')
+    ]
+
+    for mset in COMPARABLE_MODELS:
+        if m in mset:
+            out = mset.copy()
+            out.discard(m)
+            return list(out)
+    
+    return []
+
 @app.get("/api/available-datasets")
 def get_available_datasets(m1: str, m2:str):
     if m1 == '' or m2 == '':
