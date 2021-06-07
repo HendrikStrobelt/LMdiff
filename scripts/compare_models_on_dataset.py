@@ -1,7 +1,7 @@
 """
 Example Usage: 
 
-python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_gpt2.h5 -o data/compared_results --bidirectional
+python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_._distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_._gpt2.h5
 """
 
 import argparse
@@ -14,6 +14,7 @@ from torch.nn import functional as F
 from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset
 from tqdm import tqdm
 import pandas as pd
+import path_fixes as pf
 
 
 parser = argparse.ArgumentParser()
@@ -31,7 +32,7 @@ parser.add_argument(
     "--output_dir",
     "-o",
     type=str,
-    default=None,
+    default=str(pf.COMPARISONS),
     help="Which directory to store the output h5 file with the default name.",
 )
 parser.add_argument(
@@ -41,9 +42,9 @@ parser.add_argument(
     help="Ranks beyond this are clamped to this value",
 )
 parser.add_argument(
-    "--bidirectional",
+    "--no-invert",
     action="store_true",
-    help="If passed, compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Some of the 'metrics' are asymmetric",
+    help="If passed, do not compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric",
 )
 
 args = parser.parse_args()
@@ -95,7 +96,7 @@ def compare_datasets(ds1_name, ds2_name):
     assert ds1.dataset_checksum == ds2.dataset_checksum, "The two datasets should have the same checksum of contents"
 
     # Below is BROKEN because python's `hash` function changes between process runs
-    # assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
+    assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
 
     default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
     output_f = output_dir / default_name
@@ -106,6 +107,6 @@ def compare_datasets(ds1_name, ds2_name):
     df.to_csv(output_f)
 
 compare_datasets(args.ds1, args.ds2)
-if args.bidirectional:
+if not args.no_invert:
     print("\n\nRepeating with inverted datasets\n\n")
     compare_datasets(args.ds2, args.ds1)

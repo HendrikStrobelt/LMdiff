@@ -28,11 +28,34 @@ def list2consistent_hash(lst):
     bstr = pickle.dumps(sorted(lst))
     return sha256(bstr).hexdigest()
 
+def reduce_logits(logits):
+    """Convert 3D logits (where each example represents a diff masked token) to 2D logits"""
+    assert logits.ndim == 3, "Expected logits to be 3 dimensional where the first dimension represents the MASK sliding across each non-special token in the input"
+    lgts2 = logits[0].clone() # Without any masks
+    for i in np.arange(1, logits.shape[0]-1):
+        lgts2[i, :] = logits[i, i, :]
+        
+    return lgts2
+
+def reduce_attentions(attention, i: int):
+    """Convert 4D attention to 3D attention for a layer's attentions
+
+    `i` indicates which index is masked at the provided attention
+    
+    Only care about attentions OUT OF each MASKed token
+    """
+    att2 = attention[0].clone()
+    
+    # Editing OUTWARD attentions
+    for i in np.arange(1, attention.shape[0]-1):
+        att2[:,i,:] = attention[i, :, i, :] # MASK_i, heads, MASK_i, outward atts
+    return att2
+
 class AnalysisLMPipelineForwardOutput(CausalLMOutputWithCrossAttentions):
-    def __init__(self, phrase: str, in_ids: torch.tensor, **kwargs):
+    def __init__(self, phrase: str, token_ids: torch.tensor, **kwargs):
         super().__init__(**kwargs)
-        self.N = len(in_ids)
-        self.in_ids = in_ids
+        self.N = len(token_ids)
+        self.token_ids = token_ids
         self.phrase = phrase
 
 
@@ -45,16 +68,38 @@ class AutoLMPipeline():
         self.config = self.model.config
         self.vocab_hash = list2consistent_hash(self.tokenizer.vocab.items())
 
+        # Only one should be true below:
+        self.is_auto_regressive = self.model.config.model_type.startswith('gpt') 
+        self.is_maskable = self.model.config.model_type.endswith('bert') 
+
     @classmethod
     def from_pretrained(cls, name_or_path):
         """Create a model and tokenizer from a single name, passing arguemnts to `from_pretrained` of the AutoTokenizer and AutoModel"""
         model = AutoModelWithLMHead.from_pretrained(name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(name_or_path)
+        if torch.cuda.is_available():
+            model = model.to(0)
         return cls(model, tokenizer)
 
     def for_model(self, s):
-        iids = self.tokenizer.encode(s, return_tensors="pt")
-        return iids
+        tids = self.tokenizer.encode(s, return_tensors="pt").to(self.device)
+
+        if self.is_auto_regressive:
+            return tids
+        elif self.is_maskable:
+            N = len(tids[0])
+
+            # Assume CLS and SEP
+            N_no_special = N - 2
+
+            # Mask every word (Except CLS and SEP) and treat that input as part of a batch
+            # First input is unmodified
+            tid2 = tids.repeat((N_no_special+1, 1))
+            rows, cols = range(1, N_no_special), range(1, N_no_special)
+            tid2[rows, cols] = self.tokenizer.mask_token_id
+            return tid2
+        else:
+            raise NotImplementedError(f"Model type is not autoregressive or maskable.")
 
     def for_model_batch(self, s: List[str]):
         ii = self.tokenizer.batch_encode_plus(s)['input_ids']
@@ -63,25 +108,33 @@ class AutoLMPipeline():
         return input
 
     def forward(self, s) -> AnalysisLMPipelineForwardOutput:
-        is_auto_regressive = self.model.config.model_type.startswith('gpt')
         with torch.no_grad():
 
-            if is_auto_regressive:
+            if self.is_auto_regressive:
                 # autoregressive ==> add BOE
                 tids = self.for_model(self.tokenizer.bos_token + s)
             else:
                 tids = self.for_model(s)
 
             output = self.model(tids, output_attentions=True)
-            output.logits = output.logits.squeeze()
-            tids = tids.squeeze()
-            if is_auto_regressive:
+
+            if self.is_auto_regressive:
+                output.logits = output.logits.squeeze()
+                tids = tids.squeeze()
                 output.logits = output.logits[:-1]
                 tids = tids[1:]
 
-                # SWAP THE BELOW LINES IF WE PREFER THE OTHER FUNCTIONALITY
-                output.attentions = [a[:,:,1:, 1:] for a in output.attentions]
+                # SWAP THE COMMENTS ON THE BELOW 2 LINES IF WE PREFER THE OTHER FUNCTIONALITY
+                output.attentions = torch.cat([a[:,:,1:, 1:] for a in output.attentions], dim=0)
                 # output.attentions = [a[:,:,:-1, :-1] for a in output.attentions]
+
+            elif self.is_maskable:
+                output.logits = reduce_logits(output.logits)
+                tids = tids[0] # Where everything is unmasked
+                output.attentions = torch.cat([reduce_attentions(a, i).unsqueeze(0) for i, a in enumerate(output.attentions)], dim=0)
+
+            else:
+                raise ValueError("Unhandled model type. Model type is not autoregressive or maskable")
 
             new_output = AnalysisLMPipelineForwardOutput(s, tids, **output.__dict__)
 
@@ -129,17 +182,6 @@ class LMAnalysisOutputH5:
         h5group.create_dataset("attention", data=self.attention)
         h5group.attrs['phrase'] = self.phrase
 
-    # def to_json(self):
-    #     return {
-    #         "token_ids": jsonify_np(self.token_ids),
-    #         "ranks": jsonify_np(self.ranks),
-    #         "probs": jsonify_np(self.probs),
-    #         "topk_probs": jsonify_np(self.topk_prob_values),
-    #         "topk_token_ids": jsonify_np(self.topk_token_ids),
-    #         "attention": jsonify_np(self.attention),
-    #         "phrase": self.phrase
-    #     }
-
 
 @dataclass
 class LMAnalysisOutput:
@@ -176,16 +218,16 @@ def collect_analysis_info(model_output: AnalysisLMPipelineForwardOutput, k=10) -
         k: The number of top probabilities we care about
     """
     probs = torch.softmax(model_output.logits, dim=1)
-    ranks = (torch.argsort(model_output.logits, dim=1, descending=True) == model_output.in_ids.unsqueeze(
+    ranks = (torch.argsort(model_output.logits, dim=1, descending=True) == model_output.token_ids.unsqueeze(
         1).expand_as(model_output.logits)).nonzero()[:, 1]
-    phrase_probs = probs[torch.arange(model_output.N), model_output.in_ids]
+    phrase_probs = probs[torch.arange(model_output.N), model_output.token_ids]
     #     topk_logit_values, topk_logit_inds = torch.topk(output.logits, k=k, dim=1)
     topk_prob_values, topk_prob_inds = torch.topk(probs, k=k, dim=1)
-    attention = torch.cat(model_output.attentions, dim=0)  # Layer, Head, N, N
+    attention = model_output.attentions # Layer, Head, N, N
 
     return LMAnalysisOutput(
         phrase=model_output.phrase,
-        token_ids=model_output.in_ids,
+        token_ids=model_output.token_ids,
         ranks=ranks,
         probs=phrase_probs,
         topk_prob_values=topk_prob_values,
