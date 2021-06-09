@@ -59,7 +59,6 @@ def get_args():
     args, _ = parser.parse_known_args()
     return args
 
-@lru_cache
 def list_all_datasets():
     return [p.stem.split(pf.ANALYSIS_DELIM) for p in pf.ANALYSIS.glob("*.h5")]
 
@@ -171,8 +170,8 @@ def specific_attention(payload:types.SpecificAttentionRequest):
     output1 = pp1.forward(payload.text)
     output2 = pp2.forward(payload.text)
 
-    att1 = torch.cat(output1.attentions)
-    att2 = torch.cat(output2.attentions)
+    att1 = output1.attentions
+    att2 = output2.attentions
 
     idx = payload.token_index_in_text
     if payload.outward_attentions:
