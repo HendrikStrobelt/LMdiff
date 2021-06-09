@@ -129,8 +129,8 @@ def get_comparable_models(m: str):
     """Find all comparable models to a given model string name"""
 
     COMPARABLE_MODELS = [
-        set('gpt2', 'distilgpt2'),
-        set('bert', 'distilbert')
+        set(['gpt2', 'distilgpt2']),
+        set(['bert', 'distilbert'])
     ]
 
     for mset in COMPARABLE_MODELS:
