@@ -3,8 +3,7 @@ Example Usage:
 
 python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_._distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_._gpt2.h5
 """
-
-import argparse
+import typer
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
 from typing import *
 from pathlib import Path
@@ -16,39 +15,7 @@ from tqdm import tqdm
 import pandas as pd
 import path_fixes as pf
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "ds1",
-    type=str,
-    help="path to first H5AnalysisResultDataset",
-)
-parser.add_argument(
-    "ds2",
-    type=str,
-    help="path to second h5 file",
-)
-parser.add_argument(
-    "--output_dir",
-    "-o",
-    type=str,
-    default=str(pf.COMPARISONS),
-    help="Which directory to store the output h5 file with the default name.",
-)
-parser.add_argument(
-    "--max_clamp_rank",
-    type=int,
-    default=50,
-    help="Ranks beyond this are clamped to this value",
-)
-parser.add_argument(
-    "--no-invert",
-    action="store_true",
-    help="If passed, do not compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric",
-)
-
-args = parser.parse_args()
-
+app = typer.Typer()
 
 def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     r1 = ex1.ranks.astype(np.int32)
@@ -80,13 +47,7 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
         "max_topk_diff": n_topk_diff.max()
     }
 
-if args.output_dir is None: output_dir = Path(".")
-else: output_dir = Path(args.output_dir)
-if output_dir.is_file(): raise ValueError("Specified output dir cannot be an existing file")
-output_dir.mkdir(parents=True, exist_ok=True)
-
-# Smart defaults
-def compare_datasets(ds1_name, ds2_name):
+def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
     ds1 = H5AnalysisResultDataset.from_file(ds1_name)
     ds2 = H5AnalysisResultDataset.from_file(ds2_name)
 
@@ -101,12 +62,39 @@ def compare_datasets(ds1_name, ds2_name):
     default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
     output_f = output_dir / default_name
 
-    diff_ab = [ex_compare(exa, exb, max_rank=args.max_clamp_rank)for exa, exb in tqdm(zip(ds1, ds2), total=len(ds1))]
+    diff_ab = [ex_compare(exa, exb, max_rank=max_clamp_rank)for exa, exb in tqdm(zip(ds1, ds2), total=len(ds1))]
     df = pd.DataFrame(data=diff_ab)
     print(f"     Saving analysis results to {output_f}")
     df.to_csv(output_f)
 
-compare_datasets(args.ds1, args.ds2)
-if not args.no_invert:
-    print("\n\nRepeating with inverted datasets\n\n")
-    compare_datasets(args.ds2, args.ds1)
+@app.command()
+def compare_models_on_dataset(
+    ds1: str = typer.Argument(..., help="path to first H5AnalysisResultDataset"),
+    ds2: str = typer.Argument(..., help="path to second H5AnalysisResultDataset"),
+    output_dir: str = typer.Option(str(pf.COMPARISONS), help="Which directory to store the output h5 file with the default name."),
+    max_clamp_rank: int = typer.Option(50, help="Ranks beyond this are clamped to this value"),
+    invert: bool = typer.Option(True, help="Compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric"),
+):
+    """Given two comparable models evaluated on the same dataset, calculate their differences
+
+    Args:
+        ds1 (str, optional): The path to the first `datasetXmodel.h5`.
+        ds2 (str, optional): The path to the first `datasetXmodel.h5`.
+        output_dir (str, optional): Where to save the output. Defaults to COMPARISONS directory for this application
+        max_clamp_rank (int, optional): Ranks beyond this are clamped to this value.
+        invert (bool, optional): Compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric.
+
+    Raises:
+        ValueError: Raised if the `output_dir` argument is an existing file.
+    """
+    output_dir = Path(output_dir)
+    if output_dir.is_file(): raise ValueError("Specified output dir cannot be an existing file")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    compare_datasets(ds1, ds2, output_dir, max_clamp_rank)
+    if invert:
+        print("\n\nRepeating with inverted datasets\n\n")
+        compare_datasets(ds2, ds1, output_dir, max_clamp_rank)
+
+if __name__ == "__main__":
+    app()
