@@ -2,7 +2,7 @@
 
 Comparing language models
 
-## Backend
+## Setting up
 From the root directory:
 
 ```
@@ -27,15 +27,32 @@ uvicorn backend.server:app
 
 </details>
 
-<details>
-<summary><b>For production (multiple workers)</b></summary>
+## Comparing Language Models
+Preprocess the models on a dataset before launching the app. Example:
 
 ```
-gunicorn -w 4 -k uvicorn.workers.UvicornWorker backend.server:app
+python scripts/preprocess.py all gpt2-medium distilgpt2 data/datasets/glu_mrpc_1+2.csv
 ```
 
-where `4` is the number of workers desired.
-</details>
+The dataset is a simple text file, with a new phrase on every line, with a bit of metadata header at the top. It can be created with:
+
+```python
+from analysis.create_dataset import create_text_dataset
+import datasets
+import path_fixes as pf
+
+glue_mrpc = datasets.load_dataset("glue", "mrpc", split="train")
+name = "glue_mrpc_train"
+
+def ds2str(glue):
+    """(e.g.,) Turn the first 50 sentences of the dataset into sentence information"""
+    sentences = glue['sentence1'][:50]
+    return "\n".join(sentences)
+
+create_text_dataset(glue_mrpc, name, ds2str, pf.DATASETS)
+```
+
+
 
 <details>
 <summary><b>Testing</b></summary>

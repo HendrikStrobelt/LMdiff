@@ -1,8 +1,3 @@
-"""
-Example Usage: 
-
-python scripts/compare_models_on_dataset.py data/analysis_results/glue_mrpc_1+2_._distilgpt2.h5 data/analysis_results/glue_mrpc_1+2_._gpt2.h5
-"""
 import typer
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
 from typing import *
@@ -14,8 +9,6 @@ from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset
 from tqdm import tqdm
 import pandas as pd
 import path_fixes as pf
-
-app = typer.Typer()
 
 def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     r1 = ex1.ranks.astype(np.int32)
@@ -62,20 +55,27 @@ def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
     default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
     output_f = output_dir / default_name
 
+    if output_f.exists():
+        error = FileExistsError(f"Will not override existing {output_f}")
+        error.details = {}
+        error.details['outfname'] = str(output_f)
+        raise error
+
     diff_ab = [ex_compare(exa, exb, max_rank=max_clamp_rank)for exa, exb in tqdm(zip(ds1, ds2), total=len(ds1))]
     df = pd.DataFrame(data=diff_ab)
     print(f"     Saving analysis results to {output_f}")
     df.to_csv(output_f)
 
-@app.command()
+    return output_f
+
 def compare_models_on_dataset(
     ds1: str = typer.Argument(..., help="path to first H5AnalysisResultDataset"),
     ds2: str = typer.Argument(..., help="path to second H5AnalysisResultDataset"),
-    output_dir: str = typer.Option(str(pf.COMPARISONS), help="Which directory to store the output h5 file with the default name."),
+    output_dir: str = str(pf.COMPARISONS),
     max_clamp_rank: int = typer.Option(50, help="Ranks beyond this are clamped to this value"),
     invert: bool = typer.Option(True, help="Compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric"),
 ):
-    """Given two comparable models evaluated on the same dataset, calculate their differences
+    """Calculate the difference between two comparable models evaluated on the same dataset
 
     Args:
         ds1 (str, optional): The path to the first `datasetXmodel.h5`.
@@ -91,10 +91,19 @@ def compare_models_on_dataset(
     if output_dir.is_file(): raise ValueError("Specified output dir cannot be an existing file")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    compare_datasets(ds1, ds2, output_dir, max_clamp_rank)
+    try:
+        output_f1 = compare_datasets(ds1, ds2, output_dir, max_clamp_rank)
+    except FileExistsError as e:
+        print(e)
+        output_f1 = e.details['outfname']
+
+    output_f2 = None
     if invert:
         print("\n\nRepeating with inverted datasets\n\n")
-        compare_datasets(ds2, ds1, output_dir, max_clamp_rank)
+        try:
+            output_f2 = compare_datasets(ds2, ds1, output_dir, max_clamp_rank)
+        except FileExistsError as e:
+            print(e)
+            output_f2 = e.details['outfname']
 
-if __name__ == "__main__":
-    app()
+    return output_f1, output_f2

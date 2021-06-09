@@ -1,9 +1,3 @@
-"""
-Example Usage: 
-
-python scripts/create_modelXdataset.py distilgpt2 data/datasets/glue_mrpc_1+2.txt --force_overwrite
-"""
-import typer
 from typing import *
 import path_fixes as pf
 from pathlib import Path
@@ -12,9 +6,6 @@ import h5py
 from analysis.analysis_pipeline import AutoLMPipeline, collect_analysis_info
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
 from analysis.text_dataset import TextDataset
-
-app = typer.Typer()
-
 
 def analyze_dataset(
     outfname: Union[Path, str],
@@ -41,9 +32,12 @@ def analyze_dataset(
     vocab = list(v_sorted.values())
 
     if outfname.exists() and not force_overwrite:
-        raise FileExistsError(
+        error = FileExistsError(
             f"Will not overwrite existing '{outfname}' unless 'force_overwrite' is True"
         )
+        error.details = {}
+        error.details['outfname'] = outfname
+        raise error
     if force_overwrite and outfname.exists():
         outfname.unlink()
 
@@ -68,7 +62,6 @@ def analyze_dataset(
 
     return H5AnalysisResultDataset(h5f)
 
-@app.command()
 def create_analysis_results(
     model_name: str,
     dataset_path: str,
@@ -107,6 +100,5 @@ def create_analysis_results(
         first_n=first_n,
         force_overwrite=force_overwrite,
     )
-
-if __name__ == "__main__":
-    app()
+    
+    return output_f
