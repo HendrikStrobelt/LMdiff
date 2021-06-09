@@ -69,7 +69,7 @@ class AutoLMPipeline():
         self.vocab_hash = list2consistent_hash(self.tokenizer.vocab.items())
 
         # Only one should be true below:
-        self.is_auto_regressive = self.model.config.model_type.startswith('gpt') 
+        self.is_auto_regressive = self.model.config.model_type.startswith('gpt')
         self.is_maskable = self.model.config.model_type.endswith('bert') 
 
     @classmethod

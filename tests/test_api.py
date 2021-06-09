@@ -2,7 +2,7 @@ from typing import *
 from fastapi.testclient import TestClient
 from urllib.parse import urlencode
 from server import app
-from server.api import GoodbyePayload
+import pytest
 
 client = TestClient(app)
 
@@ -40,3 +40,17 @@ def test_analyze():
     r = response.json()
     assert r['request']['text'] == request['text']
     # More assertions needed here
+
+def test_comparable_models():
+    requests = [
+        { "m": "gpt2" },
+        { "m": "bert"}
+    ]
+    answers = [
+        ["distilgpt2"], ["distilbert"]
+    ]
+
+    for request, answer in zip(requests, answers):
+        response = client.get(make_url("/api/get-comparable-models", request))
+        r = response.json()
+        assert r == answer
