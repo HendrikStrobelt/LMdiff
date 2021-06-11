@@ -276,7 +276,7 @@ def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
         "diff": {
             "rank": parsed_output2.ranks - parsed_output1.ranks,
             "prob": parsed_output2.probs - parsed_output1.probs,
-            "rank_clamp": clamp(parsed_output2.ranks) - clamp(parsed_output1.ranks)
+            "rank_clamp": clamp(parsed_output2.ranks.cpu()) - clamp(parsed_output1.ranks.cpu())
             # "kl": kl_div(parsed_output1.probs, parsed_output2.probs, reduction="sum") # No meaning
         }
     }

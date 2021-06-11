@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import *
 from functools import lru_cache
 import pandas as pd
+from dataclasses import dataclass
 
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
@@ -25,24 +26,6 @@ from api import LMComparer, ModelManager
 
 __author__ = "DreamTeam V1.5: Hendrik Strobelt, Sebastian Gehrmann, Ben Hoover"
 
-
-@lru_cache
-def get_pipeline(name: str):
-    return AutoLMPipeline.from_pretrained(name)
-
-
-@lru_cache
-def get_comparison_results(m1: str, m2: str, dataset: str):
-    results_fname = pf.COMPARISONS / f"{m1}_{m2}_{dataset}.csv"
-    compared_results = pd.read_csv(str(results_fname), index_col=0)
-    return compared_results
-
-
-@lru_cache
-def get_analysis_results(dataset: str, mname: str):
-    return H5AnalysisResultDataset.from_file(str(pf.ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{mname}.h5"))
-
-
 @lru_cache
 def get_args():
     parser = argparse.ArgumentParser(
@@ -51,16 +34,56 @@ def get_args():
     parser.add_argument("--model", default="gpt-2-small")
     parser.add_argument("--address", default="127.0.0.1")  # 0.0.0.0 for nonlocal use
     parser.add_argument(
-        "--port", type=int, default=5001, help="Port on which to run the app."
+        "--port", type=int, default=8000, help="Port on which to run the app."
     )
     parser.add_argument("--dir", type=str, default=os.path.abspath("data"))
     parser.add_argument("--suggestions", type=str, default=os.path.abspath("data"))
+    parser.add_argument("--config", "-c", type=str, default=None, help="Use a custom analysis folder rather than the default paths to compare models")
 
     args, _ = parser.parse_known_args()
     return args
+    
+@dataclass
+class ServerConfig:
+    ANALYSIS: Union[Path, str]
+    COMPARISONS: Union[Path, str]
+    custom_dir: bool = False
+    m1: Optional[str] = None # Only available if 'custom_dir' is true
+    m2: Optional[str] = None # Only available if 'custom_dir' is true
+    dataset: Optional[str] = None # Only available if 'custom_dir' is true
+
+@lru_cache
+def get_config() -> ServerConfig:
+    config_dir = get_args().config
+    if config_dir is None:
+        return ServerConfig(ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_dir=False)
+    
+    config_dir = Path(config_dir)
+
+    with open(config_dir / "metadata.json", 'r') as fp:
+        metadata = json.load(fp)
+
+    dataset = Path(metadata['dataset']).stem
+    
+    return ServerConfig(ANALYSIS=config_dir, COMPARISONS=config_dir, custom_dir=True, m1=metadata['m1'], m2=metadata['m2'], dataset=dataset)
+
+
+@lru_cache
+def get_pipeline(name: str):
+    return AutoLMPipeline.from_pretrained(name)
+
+@lru_cache
+def get_comparison_results(m1: str, m2: str, dataset: str):
+    results_fname = get_config().COMPARISONS / f"{m1}_{m2}_{dataset}.csv"
+    compared_results = pd.read_csv(str(results_fname), index_col=0)
+    return compared_results
+
+@lru_cache
+def get_analysis_results(dataset: str, mname: str):
+    return H5AnalysisResultDataset.from_file(str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{mname}.h5"))
 
 def list_all_datasets():
-    return [p.stem.split(pf.ANALYSIS_DELIM) for p in pf.ANALYSIS.glob("*.h5")]
+    return [p.stem.split(pf.ANALYSIS_DELIM) for p in get_config().ANALYSIS.glob("*.h5")]
 
 app = FastAPI()
 app.add_middleware(
@@ -142,6 +165,9 @@ def get_comparable_models(m: str):
 
 @app.get("/api/available-datasets")
 def get_available_datasets(m1: str, m2:str):
+    if get_config().custom_dir:
+        return [get_config().dataset]
+
     if m1 == '' or m2 == '':
         return []
 
@@ -153,6 +179,12 @@ def get_available_datasets(m1: str, m2:str):
 
 @app.get("/api/all-models")
 def get_all_models():
+    if get_config().custom_dir:
+        return [
+            {"model": get_config().m1},
+            {"model": get_config().m2},
+        ]
+
     res = [
         {"model": "gpt2"},
         {"model": "distilgpt2"},

@@ -31,7 +31,13 @@ uvicorn backend.server:app
 Preprocess the models on a dataset before launching the app. Example:
 
 ```
-python scripts/preprocess.py all gpt2-medium distilgpt2 data/datasets/glu_mrpc_1+2.csv
+python scripts/preprocess.py all gpt2-medium distilgpt2 data/datasets/glue_mrpc_1+2.csv --output_dir data/sample/gpt2-glue-comparisons
+```
+
+Then start the app:
+
+```
+python backend/server/main.py --config data/sample/gpt2-glue-comparisons
 ```
 
 The dataset is a simple text file, with a new phrase on every line, with a bit of metadata header at the top. It can be created with:
