@@ -1,51 +1,90 @@
 <template>
   <NavBar :all-models="allModels" v-model:selected-m1="selectedM1"
-          v-model:selected-m2="selectedM2"/>
+          v-model:selected-m2="selectedM2"
+          @about-clicked="states.showAbout=!states.showAbout"/>
 
+  <transition name="fade">
+    <div v-if="states.showAbout" style="max-width: 800px;margin: 0 auto; padding: 15px; box-sizing: border-box;
+  background-color: #eee;
+  border-radius: 0 0 10px 10px; border: 3px solid #2c2d4d; border-top: none;position: relative;">
 
-  <div style="width: 100%; padding: 5px;box-sizing:border-box;">
+      <h3 style="border: none;">About</h3>
+      <p>LMdiff allows to observe qualitative differences between language
+        models of similar type
+        and of the same tokenization method. For a given text, the pairwise
+        differences in probability and rank of a token under each of the models
+        is encoded in gradients of red (model 1) to blue (model 2). Interesting
+        snippets can be searched in a pre-recorded corpus using a
+        described metric. For more information please read the NeurIPS demo
+        paper on arxive and check out the github repo. </p>
+      <p> LMdiff is collaboration between Hendrik Strobelt (MIT-IBM), Benjamin
+        Hoover (MIT-IBM),
+        Arvind Satyanarayan (MIT-IBM), and Sebastian Gehrmann (HarvardNLP).</p>
+      <p> NeurIPS'20 demo paper at Arxive: <a href="">...</a><br/>
+        Github Repo: <a href="">...</a><br/>
+        2-min intro video: <a href="">...</a><br/>
+      </p>
+      <div
+          style="padding: 2px;cursor: pointer;text-align: center;"
+          @click="states.showAbout=false">[close]
+      </div>
+
+    </div>
+  </transition>
+  <div v-if="!states.modelsMatch" style="width:100%; padding: 5px; box-sizing: border-box;
+  text-align: center;color: #bb1e1e">
+    -- Please choose compatible models --
+  </div>
+  <div style="width: 100%; padding: 5px;box-sizing:border-box;" v-else>
     <h3>Search for interesting snippets</h3>
-    <div style="display: inline-block;">
-      <label for="ds-select">Select reference dataset: </label>
-      <select name="dataset" id="ds-select" v-model="currentDataset"
-              style="background-color: #eee">
-        <option v-for="ds in datasets" :key="ds" :value="ds">{{ ds }}</option>
-      </select>
+    <div v-if="datasets.length>0">
+      <div class="subheading">Select dataset and metric</div>
+      <div style="display: inline-block;">
+        <!--        <label for="ds-select" class="subheading">Select dataset and metric </label>-->
+        <select name="dataset" id="ds-select" v-model="currentDataset"
+                style="background-color: #eee">
+          <option v-for="ds in datasets" :key="ds" :value="ds">{{ ds }}</option>
+        </select>
+      </div>
+      <div style="display: inline-block; margin-left: 1em;">
+        <!--        <label for="metric-select">Select metric: </label>-->
+        <select name="dataset" id="metric-select" v-model="currentMetric"
+                style="background-color: #eee">
+          <option v-for="metric in availableMetrics" :key="metric"
+                  :value="metric">{{ metric }}
+          </option>
+        </select>
+      </div>
+      <div style="display: inline-block; margin-left: 1em;">
+        <button :disabled="!currentDataset.length || states.searchRequestSent"
+                @click="searchForSamples">
+          search
+        </button>
+      </div>
     </div>
-    <div style="display: inline-block; margin-left: 1em;">
-      <label for="metric-select">Select metric: </label>
-      <select name="dataset" id="metric-select" v-model="currentMetric"
-              style="background-color: #eee">
-        <option v-for="metric in availableMetrics" :key="metric"
-                :value="metric">{{ metric }}
-        </option>
-      </select>
-    </div>
-    <div style="display: inline-block; margin-left: 1em;">
-      <button :disabled="!currentDataset.length || states.searchRequestSent"
-              @click="searchForSamples">
-        search
-      </button>
+    <div v-else> Argh... no snippet dataset available for the current selection
+      of models.
     </div>
     <div v-if="states.searchRequestSent"> Searching ....</div>
     <div v-if="sampleTexts.length>0"
          style="margin-top: 10px; display: flex; flex-wrap: nowrap; flex-direction: column;">
-      <div style="margin-bottom: 2px;"> Click on one of the samples to analyze
-        in depth:
+      <div class="subheading"> Search results (click for details)
       </div>
-      <div class="sampleText"
-           v-for="s in sampleTexts" :key="s.text"
-           @click="useSample(s.text)"
-      > {{ s.text }} <span
-          class="measureNumber"> ({{ s.measure }})</span></div>
-
+      <div style="overflow-y: scroll; max-height: 150px;">
+        <div class="sampleText"
+             v-for="s in sampleTexts" :key="s.text"
+             @click="useSample(s.text)"
+        > {{ s.text }} <span
+            class="measureNumber"> ({{ s.measure }})</span></div>
+      </div>
     </div>
 
-    <h3 id="Inspector">Inspect text snippet
+    <h3 id="Inspector">Or enter snippet text
     </h3>
     <!--suppress HtmlFormInputWithoutLabel -->
     <textarea id="test_text"
-              style="width:100%; box-sizing:border-box;border:1px solid;height: 100px;"
+              style="width:100%; box-sizing:border-box;border:1px solid lightgray;
+              height: 100px;font: inherit;"
               v-model="customText"/>
     <button @click="analyzeText"
             :disabled="states.analyzeRequestSent"
@@ -58,26 +97,28 @@
     </div>
 
 
-    <div style="overflow-x: auto;"
-         v-show="!states.zeroRequests && !states.analyzeRequestSent">
-      <h3> Analysis </h3>
-      <div style="margin-top: 10px;">
-        Probabilities (larger is better): <br/>
-        <LineGraph :values="probValues"
-                   @hoverChanged="hoverChanged"
-                   :show-hover-for="hoverID"
-        ></LineGraph>
+    <div
+        v-show="!states.zeroRequests && !states.analyzeRequestSent">
+      <h3> Token Analysis </h3>
+      <div style="overflow-x: auto;">
+        <div style="margin-top: 10px;">
+          <div class="subheading">Probabilities (larger is better)</div>
+          <LineGraph :values="probValues"
+                     @hoverChanged="hoverChanged"
+                     :show-hover-for="hoverID"
+          ></LineGraph>
+        </div>
+        <div style="margin-top: 10px;">
+          <div class="subheading">Rank (smaller is better)</div>
+          <LineGraph :values="rankValues" :max-value="2000"
+                     :y-scale="scalePow().exponent(.3).clamp(true)"
+                     @hoverChanged="hoverChanged"
+                     :show-hover-for="hoverID"
+          ></LineGraph>
+        </div>
       </div>
       <div style="margin-top: 10px;">
-        Rank (smaller is better): <br/>
-        <LineGraph :values="rankValues" :max-value="2000"
-                   :y-scale="scalePow().exponent(.3).clamp(true)"
-                   @hoverChanged="hoverChanged"
-                   :show-hover-for="hoverID"
-        ></LineGraph>
-      </div>
-      <div style="margin-top: 10px;margin-bottom: 200px;">
-        Tokens (select a measure and hover over tokens for detail):
+        <div class="subheading">Measure mapped to each token</div>
         <div style="display: inline-block">
           <button class="diffMode" v-for="dm in availableDiffModes"
                   :key="dm.key"
@@ -86,8 +127,11 @@
           >{{ dm.name }}
           </button>
         </div>
-
+      </div>
+      <div style="margin-top: 10px;margin-bottom: 80px;">
+        <div class="subheading">Tokens (hover for details)</div>
         <InteractiveTokens :tokens="tokenList"
+                           :tokenization="tokenization"
                            @hoverChanged="hoverChanged"
                            :show-hover-for="hoverID"
         ></InteractiveTokens>
@@ -102,7 +146,7 @@
 
 <script lang="ts">
 import {defineComponent, reactive, ref, watch, watchEffect} from 'vue'
-import {AnalyzedText, AnalyzeTextResponse, API} from "./api";
+import {AnalyzedText, AnalyzeTextResponse, API, ModelDescription} from "./api";
 import LineGraph from "./components/LineGraph.vue";
 import NavBar from "./components/NavBar.vue";
 import {scalePow} from "d3"
@@ -112,6 +156,7 @@ import InteractiveTokens, {
   ModelTokenInfo,
   TokenInfo
 } from "./components/InteractiveTokens.vue";
+import {available_tokenizations} from "./etc/tokenization";
 
 
 export default defineComponent({
@@ -122,16 +167,19 @@ export default defineComponent({
     const states = reactive({
       analyzeRequestSent: false,
       zeroRequests: true,
-      searchRequestSent: false
+      searchRequestSent: false,
+      modelsMatch: false,
+      showAbout: true
     })
 
     const api = new API()
-    const allModels = ref([])
+    const allModels = ref([] as ModelDescription[])
     const selectedM1 = ref('')
     const selectedM2 = ref('')
     const probValues = ref([] as number[][])
     const rankValues = ref([] as number[][])
     const hoverID = ref(-1)
+    const tokenization = ref(available_tokenizations.gpt)
     let currentResult = null as AnalyzeTextResponse;
 
     const availableDiffModes: { key: string, name: string }[] =
@@ -165,17 +213,28 @@ export default defineComponent({
     })
 
     watchEffect(() => {
+      const m1 = allModels.value.filter(d => d.model == selectedM1.value)[0];
+      const m2 = allModels.value.filter(d => d.model == selectedM2.value)[0];
+      states.modelsMatch = !!selectedM1.value &&
+          !!selectedM2.value && (m1.type === m2.type);
+      if (states.modelsMatch) {
+        tokenization.value = available_tokenizations[m1.token];
+        states.zeroRequests = true;
+      }
       api.all_ds(selectedM1.value, selectedM2.value).then(res => {
         datasets.value = res;
         currentDataset.value = res[0];
       })
     })
 
-    watchEffect(() => {
-      api.getSpecificAttentions(selectedM1.value, selectedM2.value, "This is bogus attentions", 2).then(res => {
-        console.log("res stuff: ", res)
-      })
-    })
+    // watchEffect(() => {
+    //   console.log(selectedM1.value, selectedM2.value, "--- selectedM1.value, selectedM2.value");
+    //   if (!!selectedM1.value && !!selectedM2.value) {
+    //     api.getSpecificAttentions(selectedM1.value, selectedM2.value, "This is bogus attentions", 2).then(res => {
+    //       console.log("res stuff: ", res)
+    //     })
+    //   }
+    // })
 
 
     const analyzeText = () => {
@@ -286,7 +345,8 @@ export default defineComponent({
       currentMetric,
       searchForSamples,
       sampleTexts,
-      useSample
+      useSample,
+      tokenization
     }
 
   }
@@ -308,7 +368,8 @@ h3 {
 .sampleText {
   /*font-size: 9pt;*/
   cursor: pointer;
-  border-left: 3px solid #aaa;
+  border-left: 8px solid #aaa;
+  border-bottom: 1px dotted #aaa;
   padding: 2px 5px;
   margin-bottom: 2px;
 }
@@ -343,6 +404,23 @@ h3 {
 
 .diffMode.selected {
   background: #ccc;
+}
+
+.subheading {
+  font-weight: bold;
+  margin-bottom: 3px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease, transform .5s ;
+
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-500px);
 }
 
 </style>
