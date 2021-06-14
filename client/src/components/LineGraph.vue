@@ -126,7 +126,7 @@ export default defineComponent({
           .attr('transform', `translate(0,${svgDims.height - intents.b})`)
 
       select(yAxisRef.value)
-          .call(axisLeft(scaleY))
+          .call(axisLeft(scaleY).ticks(Math.floor(svgDims.height/20)))
           .attr('transform', `translate(${intents.l},0)`)
 
 

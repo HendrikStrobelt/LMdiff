@@ -82,8 +82,10 @@ def get_comparison_results(m1: str, m2: str, dataset: str):
 def get_analysis_results(dataset: str, mname: str):
     return H5AnalysisResultDataset.from_file(str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{mname}.h5"))
 
+
 def list_all_datasets():
     return [p.stem.split(pf.ANALYSIS_DELIM) for p in get_config().ANALYSIS.glob("*.h5")]
+
 
 app = FastAPI()
 app.add_middleware(
@@ -97,6 +99,7 @@ app.add_middleware(
 lru = {}
 model_manager = ModelManager()
 
+
 class AvailableMetrics(str, Enum):
     avg_rank_diff = "avg_rank_diff"
     max_rank_diff = "max_rank_diff"
@@ -107,6 +110,7 @@ class AvailableMetrics(str, Enum):
     kl = "kl"
     avg_topk_diff = "avg_topk_diff"
     max_topk_diff = "max_topk_diff"
+
 
 available_metrics = set(AvailableMetrics._member_names_)
 
@@ -160,11 +164,12 @@ def get_comparable_models(m: str):
             out = mset.copy()
             out.discard(m)
             return list(out)
-    
+
     return []
 
+
 @app.get("/api/available-datasets")
-def get_available_datasets(m1: str, m2:str):
+def get_available_datasets(m1: str, m2: str):
     if get_config().custom_dir:
         return [get_config().dataset]
 
@@ -177,6 +182,7 @@ def get_available_datasets(m1: str, m2:str):
     available_datasets = list(m1_h5.intersection(m2_h5))
     return available_datasets
 
+
 @app.get("/api/all-models")
 def get_all_models():
     if get_config().custom_dir:
@@ -186,16 +192,19 @@ def get_all_models():
         ]
 
     res = [
-        {"model": "gpt2"},
-        {"model": "distilgpt2"},
+        {"model": "gpt2", "type": "gpt", "token": "gpt"},
+        {"model": "distilgpt2", "type": "gpt", "token": "gpt"},
+        {"model": "bert-base-uncased", "type": "bert", "token": "bert"},
+        {"model": "distilbert-base-uncased", "type": "bert", "token": "bert"},
         # {"model": "lysandre/arxiv-nlp"},
         # {"model": "lysandre/arxiv"},
     ]
 
     return res
 
+
 @app.post("/api/specific-attention")
-def specific_attention(payload:types.SpecificAttentionRequest):
+def specific_attention(payload: types.SpecificAttentionRequest):
     pp1 = get_pipeline(payload.m1)
     pp2 = get_pipeline(payload.m2)
 
@@ -207,25 +216,26 @@ def specific_attention(payload:types.SpecificAttentionRequest):
 
     idx = payload.token_index_in_text
     if payload.outward_attentions:
-        a1 = att1[:,:,idx, :]
-        a2 = att2[:,:,idx, :]
+        a1 = att1[:, :, idx, :]
+        a2 = att2[:, :, idx, :]
     else:
-        a1 = att1[:,:,:, idx]
-        a2 = att2[:,:,:, idx]
+        a1 = att1[:, :, :, idx]
+        a2 = att2[:, :, :, idx]
 
     return {
         "m1": deepdict_to_json(a1, ndigits=4, force_float=True),
         "m2": deepdict_to_json(a2, ndigits=4, force_float=True)
     }
 
+
 @app.get("/api/new-suggestions")
 def new_suggestions(
-    m1: str,
-    m2: str,
-    dataset: str,
-    metric: AvailableMetrics,
-    order: SortOrder = "descending",
-    k: int = 50,
+        m1: str,
+        m2: str,
+        dataset: str,
+        metric: AvailableMetrics,
+        order: SortOrder = "descending",
+        k: int = 50,
 ):
     f"""Get the comparison between model m1 and m2 on the dataset. Rank the output according to a valid metric
 

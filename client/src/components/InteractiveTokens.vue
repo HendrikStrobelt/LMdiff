@@ -1,19 +1,20 @@
 <template>
   <div class="InteractiveTokens">
     <div class="token" v-for="(t, index) in tokens" :ref="addTokenRef"
-         :class="{leftSpace:t.token.startsWith(tokenization.leftSpace),
-         newLine: t.token.startsWith(tokenization.newLine)  }"
+         :class="{leftSpace:tokenization.leftSpace(t.token),
+         newLine: tokenization.newLine(t.token)  }"
          :key="index"
          :style="{borderBottom: '5px solid',
-         borderBottomColor:t.color,
+         borderBottomColor:(index===showHoverFor)?'#333':t.color,
          backgroundColor:(index===showHoverFor)?t.color:null,
-         borderTop:'3px solid',
-         marginTop:'2px',
-         borderTopColor:(index===showHoverFor)?'#2c2d4d':'rgba(0,0,0,0)',
+         borderTop:'4px solid',
+         // borderTop:(index===showHoverFor)?'3px solid':'0.1px solid',
+         // marginTop:(index===showHoverFor)?'0px':'3px', //'#2c2d4d'
+         borderTopColor:(index===showHoverFor)?'#333':'rgba(0,0,0,0)',
          }"
          @mouseenter="mouseEnter(index, $event)"
          @mouseleave="mouseLeave"
-    >{{ token_cleanup(t.token) }}
+    >{{ tokenization.cleanup(t.token) }}
     </div>
     <div class="tooltip" v-if="tt.visible"
          :style="{top:tt.y+'px',
@@ -31,7 +32,7 @@
           <div style="color:#d6604d"
                :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
                v-for="topk in (currentTokenInfo?.m1?.topk || [])"
-          > {{ formatNumbers(topk[1]) }} - {{ token_cleanup(topk[0]) }}
+          > {{ formatNumbers(topk[1]) }} - {{ tokenization.cleanup(topk[0]) }}
           </div>
           <!--        <p>{{ currentTokenInfo?.m1 }}</p>-->
         </div>
@@ -41,7 +42,7 @@
           <div style="color:#4393c3"
                :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
                v-for="topk in (currentTokenInfo?.m2?.topk || [])"
-          > {{ formatNumbers(topk[1]) }} - {{ token_cleanup(topk[0]) }}
+          > {{ formatNumbers(topk[1]) }} - {{ tokenization.cleanup(topk[0]) }}
           </div>
         </div>
         <div class="tt-c" v-show="!!currentTokenInfo?.diff">
@@ -59,7 +60,7 @@
       </div>
       <div
            style="text-align:center;">
-        <div style="font-weight: bold; padding: 3px 0;">{{ token_cleanup(currentTokenInfo?.token) }}</div>
+        <div style="font-weight: bold; padding: 3px 0;">{{ tokenization.cleanup(currentTokenInfo?.token) }}</div>
       </div>
     </div>
 
@@ -79,7 +80,7 @@ import {
   ref,
   watch
 } from "vue";
-import {token_cleanup} from "../etc/util";
+import {available_tokenizations, Tokenization} from "../etc/tokenization";
 
 export interface ModelTokenInfo {
   prob: number,
@@ -96,11 +97,6 @@ export interface TokenInfo {
   diff?: { rank?: number, rank_clamped?: number, prob: number }
 }
 
-export interface Tokenization {
-  type: string,
-  leftSpace: string,
-  newLine: string
-}
 
 export default defineComponent({
   name: "InteractiveTokens",
@@ -111,11 +107,7 @@ export default defineComponent({
     },
     tokenization: {
       type: Object as PropType<Tokenization>,
-      default: {
-        type: 'BPE',
-        leftSpace: 'Ġ',
-        newLine: 'Ċ'
-      }
+      default: available_tokenizations.gpt
     },
     showHoverFor: {
       type: Number,
@@ -190,7 +182,6 @@ export default defineComponent({
     return {
       mouseEnter,
       mouseLeave,
-      token_cleanup,
       tt,
       currentTokenInfo,
       formatNumbers,
@@ -206,6 +197,7 @@ export default defineComponent({
   display: inline-block;
   cursor: crosshair;
   transition: 100ms;
+  box-sizing: border-box;
 }
 
 .leftSpace {
