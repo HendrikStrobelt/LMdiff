@@ -12,7 +12,7 @@ pip install -e .
 dvc pull
 ```
 
-Run the backend in development mode:
+Run the backend in development mode, deploying default models and configurations:
 
 ```
 uvicorn backend.server:app --reload
