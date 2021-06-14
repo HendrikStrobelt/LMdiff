@@ -173,6 +173,8 @@ def round_nested_list(x, ndigits: int = 3, force_float=True):
 
 def deepdict_to_json(x, ndigits=3, force_float=False):
     """Convert a nested dictionary to a jsonable object, rounding items as necessary"""
+    # First convert out of numpy
+    x = jsonify_np(x)
     if isinstance(x, torch.Tensor) or isinstance(x, np.ndarray):
         return round_nested_list(x.tolist(), ndigits, force_float)
     elif isinstance(x, list) or isinstance(x, tuple):

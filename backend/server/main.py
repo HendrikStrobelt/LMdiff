@@ -4,6 +4,7 @@ import os
 import json
 import re
 import torch
+import numpy as np
 from enum import Enum
 from pathlib import Path
 from typing import *
@@ -39,6 +40,7 @@ def get_args():
     parser.add_argument("--dir", type=str, default=os.path.abspath("data"))
     parser.add_argument("--suggestions", type=str, default=os.path.abspath("data"))
     parser.add_argument("--config", "-c", type=str, default=None, help="Use a custom analysis folder rather than the default paths to compare models")
+    parser.add_argument("--tokenization-type", "-t", type=str, default="gpt", help="One of {'gpt', 'bert'}. Tells the frontend how to visualize the tokens used by the model.")
 
     args, _ = parser.parse_known_args()
     return args
@@ -187,8 +189,8 @@ def get_available_datasets(m1: str, m2: str):
 def get_all_models():
     if get_config().custom_dir:
         return [
-            {"model": get_config().m1},
-            {"model": get_config().m2},
+            {"model": get_config().m1, "type": "custom", "token": get_args().tokenization_type},
+            {"model": get_config().m2, "type": "custom", "token": get_args().tokenization_type},
         ]
 
     res = [
@@ -236,6 +238,7 @@ def new_suggestions(
         metric: AvailableMetrics,
         order: SortOrder = "descending",
         k: int = 50,
+        sort_by_abs: bool = True
 ):
     f"""Get the comparison between model m1 and m2 on the dataset. Rank the output according to a valid metric
 
@@ -246,6 +249,7 @@ def new_suggestions(
         metric (str): One of the available metrics: '{available_metrics}'
         order (SortOrder, optional): If "ascending", sort in order of least to greatest. Defaults to "descending".
         k (int, optional): The number of interesting instances to return. Defaults to 50.
+        sort_by_abs (bool): Sort by the absolute value. Defaults to True
 
     Returns:
         Object containing information to statically analyze two models.
@@ -256,9 +260,25 @@ def new_suggestions(
     ds2 = get_analysis_results(dataset, m2)
     compared_results = get_comparison_results(m1, m2, dataset)
 
-    df_sorted = compared_results.sort_values(
-        by=metric, ascending=("ascending" == order)
-    )[:k]
+    if sort_by_abs:
+        results = np.array(compared_results[metric])
+        results_sign = np.sign(results)
+        results_abs = np.abs(results)
+
+        sign = -1 if order == "descending" else 1
+        sort_idxs = np.argsort(sign * results_abs)[:k]
+        df_sorted = compared_results.iloc[sort_idxs]
+        results_sign = results_sign[sort_idxs]
+
+    else:
+        df_sorted = compared_results.sort_values(
+            by=metric, ascending=("ascending" == order)
+        )[:k]
+        results_sign = np.ones(len(df_sorted))
+
+    print(f"RES SIGN == 1 (leaning `{m2}` if probability, `{m1}` if rank): ", (results_sign == 1).sum())
+    print("RES SIGN == 0 (same rank and prob): ", (results_sign == 0).sum())
+    print("RES SIGN == -1 (leaning `{m1} if probability, `{m2}` if rank): ", (results_sign == -1).sum())
     metrics = df_sorted.to_dict(orient="index")
 
     def proc_data_row(x1, x2):
@@ -286,8 +306,8 @@ def new_suggestions(
     result = [
         deepdict_to_json(o, ndigits=3)
         for o in [
-            dict({"example_idx": k, "metrics": v}, **proc_data_row(ds1[k], ds2[k]))
-            for k, v in metrics.items()
+            dict({"example_idx": k, "metrics": v, "sign": results_sign[i]}, **proc_data_row(ds1[k], ds2[k]))
+            for i, (k, v) in enumerate(metrics.items())
         ]
     ]
 
