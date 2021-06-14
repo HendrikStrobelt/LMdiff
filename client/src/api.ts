@@ -116,11 +116,19 @@ export interface AnalyzeTextResponse {
   }
 }
 
-export interface SpecificAttentionsResponse{
+export interface SpecificAttentionsResponse {
   m1: number[][][]
   m2: number[][][]
 }
 
+
+export interface ModelDescription {
+  model: string,
+  type: "gpt" | "bert",
+  token: "gpt" | "bert",
+
+  [key: string]: string
+}
 
 /**
  * ==== API Object =====
@@ -143,7 +151,7 @@ export class API {
   /**
    * get a list of all available projects
    */
-  public all_projects(): Promise<{ model: string, [key: string]: string }[]> {
+  public all_projects(): Promise<ModelDescription[]> {
     return d3.json(this.baseURL + '/all-models')
   }
 
