@@ -5,8 +5,6 @@ import transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, AutoModelWithLMHead
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from hashlib import sha256
-# from server.utils import jsonify_np # Circular import issues
-# from torch.nn.functional import kl_div
 
 import torch
 import h5py
@@ -247,13 +245,14 @@ def zipTopK(tokens_topk: List[List[str]], probs):
 def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
     assert pp1.vocab_hash == pp2.vocab_hash, "Vocabularies of the two pipelines must align"
 
-    tokens = pp1.tokenizer.tokenize(text)
     output1 = pp1.forward(text)
     output2 = pp2.forward(text)
 
     parsed_output1 = collect_analysis_info(output1, k=topk)
     parsed_output2 = collect_analysis_info(output2, k=topk)
 
+    token_ids = parsed_output1.token_ids
+    tokens = pp1.tokenizer.convert_ids_to_tokens(token_ids)
 
     def clamp(arr, max_rank=50):
         return np.clip(arr, 0, max_rank)
