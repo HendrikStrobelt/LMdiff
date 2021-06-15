@@ -62,12 +62,12 @@ class AutoLMPipeline():
         self.model: transformers.PreTrainedModel = model
         self.device = self.model.device
         self.tokenizer: transformers.PreTrainedTokenizer = tokenizer
-        self.tokenizer.pad_token = self.tokenizer.eos_token
         self.config = self.model.config
         self.vocab_hash = list2consistent_hash(self.tokenizer.vocab.items())
 
         # Only one should be true below:
         self.is_auto_regressive = self.model.config.model_type.startswith('gpt')
+        self.tokenizer.pad_token = self.tokenizer.eos_token if self.is_auto_regressive else self.tokenizer.pad_token
         self.is_maskable = self.model.config.model_type.endswith('bert') 
 
     @classmethod
