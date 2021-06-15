@@ -128,16 +128,28 @@
           </button>
         </div>
       </div>
-      <div style="margin-top: 10px;margin-bottom: 80px;">
-        <div class="subheading">Tokens (hover for details)</div>
+      <div style="margin-top: 10px;">
+        <div class="subheading">Tokens (hover/click for details)</div>
         <InteractiveTokens :tokens="tokenList"
                            :tokenization="tokenization"
                            @hoverChanged="hoverChanged"
+                           @tokenClicked="updateTokenSelection"
+                           :are-selected="tooltipList.map(d => d.index)"
                            :show-hover-for="hoverID"
+                           :showMiniTT="showMiniTT"
         ></InteractiveTokens>
 
       </div>
-
+      <div style="margin-top: 20px">
+        <div class="subheading">Selected Tokens</div>
+        <div v-if="tooltipList.length===0"> (Click on tokens to select some.) </div>
+        <MultiSelectTooltips :tooltip-list="tooltipList"
+                             @closeTT="updateTokenSelection"
+                             @hoverChanged="hoverChanged"
+                             :show-hover-for="hoverID"
+                             v-else
+        ></MultiSelectTooltips>
+      </div>
 
     </div>
 
@@ -149,19 +161,19 @@ import {defineComponent, reactive, ref, watch, watchEffect} from 'vue'
 import {AnalyzedText, AnalyzeTextResponse, API, ModelDescription} from "./api";
 import LineGraph from "./components/LineGraph.vue";
 import NavBar from "./components/NavBar.vue";
-import {scalePow} from "d3"
+import {scalePow, ascending} from "d3"
 import diffModes from "./etc/diffModes";
-import {get, sortBy} from "lodash"
+import {get, sortBy, findIndex} from "lodash"
 import InteractiveTokens, {
   ModelTokenInfo,
   TokenInfo
 } from "./components/InteractiveTokens.vue";
 import {available_tokenizations} from "./etc/tokenization";
-
+import MultiSelectTooltips, {ToolTipInfo} from "./components/MultiSelectTooltips.vue";
 
 export default defineComponent({
   name: 'App',
-  components: {InteractiveTokens, LineGraph, NavBar},
+  components: {MultiSelectTooltips, InteractiveTokens, LineGraph, NavBar},
   setup() {
 
     const states = reactive({
@@ -193,11 +205,30 @@ export default defineComponent({
     const availableMetrics = ["avg_rank_diff", "max_rank_diff", "avg_clamped_rank_diff", "max_clamped_rank_diff", "avg_prob_diff", "max_prob_diff", "kl", "avg_topk_diff", "max_topk_diff"]
     const currentMetric = ref("avg_clamped_rank_diff")
 
-    const tokenList = ref([] as any[])
+    const tokenList = ref([] as TokenInfo[])
 
-
+    const showMiniTT = ref(false);
     const hoverChanged = (hover) => {
       hoverID.value = hover.index;
+      showMiniTT.value = !!hover.mini;
+    }
+
+    const tooltipList = ref([] as ToolTipInfo[])
+    const updateTokenSelection = ({index}) => {
+      // TODO: if index does exist delete otherwise add..
+      const pos = findIndex(tooltipList.value, d => d.index === index)
+      if (pos < 0) {
+        //not found
+        tooltipList.value = [...tooltipList.value, {
+          index,
+          currentTokenInfo: tokenList.value[index],
+          tokenization: tokenization.value
+        } as ToolTipInfo]
+            .sort((a, b) => ascending(a.index, b.index))
+      }else{
+        tooltipList.value.splice(pos,1);
+      }
+
     }
 
 
@@ -228,6 +259,7 @@ export default defineComponent({
     })
 
     const analyzeText = () => {
+      tooltipList.value = [];
       states.analyzeRequestSent = true;
       states.zeroRequests = false;
       api.analyze(
@@ -259,21 +291,22 @@ export default defineComponent({
         }
       }
 
-      tokenList.value = currentResult.result.tokens.map((token, i) => {
-        const value = get(r, diffModes[currentDiffMode.value].access)[i] as number;
+      tokenList.value = currentResult.result.tokens.map((token, index) => {
+        const value = get(r, diffModes[currentDiffMode.value].access)[index] as number;
         return {
           token,
           value,
+          index,
           color: diffModes[currentDiffMode.value]
               .colorScale(value),
-          m1: modelTokenInfo(i, 'm1'),
-          m2: modelTokenInfo(i, 'm2'),
+          m1: modelTokenInfo(index, 'm1'),
+          m2: modelTokenInfo(index, 'm2'),
           diff: {
-            rank: r.diff.rank[i],
-            rank_clamped: r.diff.rank_clamp[i],
-            prob: r.diff.prob[i]
+            rank: r.diff.rank[index],
+            rank_clamped: r.diff.rank_clamp[index],
+            prob: r.diff.prob[index]
           }
-          // properties: get_prob(i)
+          // properties: get_prob(index)
         } as TokenInfo
       });
     }
@@ -336,7 +369,10 @@ export default defineComponent({
       searchForSamples,
       sampleTexts,
       useSample,
-      tokenization
+      tokenization,
+      updateTokenSelection,
+      tooltipList,
+      showMiniTT
     }
 
   }
@@ -403,7 +439,7 @@ h3 {
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.5s ease, transform .5s ;
+  transition: opacity 0.5s ease, transform .5s;
 
 }
 

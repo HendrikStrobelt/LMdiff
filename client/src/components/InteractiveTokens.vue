@@ -5,15 +5,16 @@
          newLine: tokenization.newLine(t.token)  }"
          :key="index"
          :style="{borderBottom: '5px solid',
-         borderBottomColor:(index===showHoverFor)?'#333':t.color,
-         backgroundColor:(index===showHoverFor)?t.color:null,
+         backgroundColor:(index===showHoverFor)?t.color:(areSelected.includes(index)?'#ccc':null),
          borderTop:'4px solid',
          // borderTop:(index===showHoverFor)?'3px solid':'0.1px solid',
          // marginTop:(index===showHoverFor)?'0px':'3px', //'#2c2d4d'
-         borderTopColor:(index===showHoverFor)?'#333':'rgba(0,0,0,0)',
+         borderBottomColor:(index===showHoverFor)?((areSelected.includes(index))?'#ccc':'#333'):t.color,
+         borderTopColor: (areSelected.includes(index))?'#ccc':((index===showHoverFor)?'#333':'rgba(0,0,0,0)'),
          }"
          @mouseenter="mouseEnter(index, $event)"
          @mouseleave="mouseLeave"
+         @click="mouseClicked(index)"
     >{{ tokenization.cleanup(t.token) }}
     </div>
     <div class="tooltip" v-if="tt.visible"
@@ -23,45 +24,10 @@
          borderRadius:tt.rightAligned?'20px 0px 20px 20px':'0 20px 20px 20px'
     }"
     >
-      <div class="tooltipSub">
-
-
-        <div class="tt-c" v-show="!!currentTokenInfo?.m1">
-          <div> Prob: {{ formatNumbers(currentTokenInfo?.m1?.prob) }}</div>
-          <div> Rank: {{ currentTokenInfo?.m1?.rank }}</div>
-          <div style="color:#d6604d"
-               :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
-               v-for="topk in (currentTokenInfo?.m1?.topk || [])"
-          > {{ formatNumbers(topk[1]) }} - {{ tokenization.cleanup(topk[0]) }}
-          </div>
-          <!--        <p>{{ currentTokenInfo?.m1 }}</p>-->
-        </div>
-        <div class="tt-c" v-show="!!currentTokenInfo?.m2">
-          <div> Prob: {{ formatNumbers(currentTokenInfo?.m2?.prob) }}</div>
-          <div> Rank: {{ currentTokenInfo?.m2?.rank }}</div>
-          <div style="color:#4393c3"
-               :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
-               v-for="topk in (currentTokenInfo?.m2?.topk || [])"
-          > {{ formatNumbers(topk[1]) }} - {{ tokenization.cleanup(topk[0]) }}
-          </div>
-        </div>
-        <div class="tt-c" v-show="!!currentTokenInfo?.diff">
-          <div>&Delta;Prob: <span
-              :style="{color:conditionalColor(currentTokenInfo?.diff?.prob, false)}">
-            {{ formatNumbers(currentTokenInfo?.diff?.prob) }}</span></div>
-          <div>&Delta;Rank: <span
-              :style="{color:conditionalColor(currentTokenInfo?.diff?.rank)}">
-          {{ currentTokenInfo?.diff?.rank }}</span></div>
-          <div>&Delta;RankCl: <span
-              :style="{color:conditionalColor(currentTokenInfo?.diff?.rank_clamped)}">
-          {{ currentTokenInfo?.diff?.rank_clamped }}</span></div>
-        </div>
-
-      </div>
-      <div
-           style="text-align:center;">
-        <div style="font-weight: bold; padding: 3px 0;">{{ tokenization.cleanup(currentTokenInfo?.token) }}</div>
-      </div>
+      <TooltipContent :current-token-info="currentTokenInfo"
+                      :tokenization="tokenization"
+                      :showMiniTT="showMiniTT"
+      ></TooltipContent>
     </div>
 
   </div>
@@ -74,13 +40,14 @@ import {format} from "d3";
 import {throttle} from "lodash";
 import {
   defineComponent,
-  onBeforeUpdate,
+  onBeforeUpdate, onUpdated,
   PropType,
   reactive,
   ref,
   watch
 } from "vue";
 import {available_tokenizations, Tokenization} from "../etc/tokenization";
+import TooltipContent from "./TooltipContent.vue";
 
 export interface ModelTokenInfo {
   prob: number,
@@ -90,6 +57,7 @@ export interface ModelTokenInfo {
 
 export interface TokenInfo {
   token: string,
+  index?: number,
   value: number,
   color: string,
   m1?: ModelTokenInfo,
@@ -100,6 +68,7 @@ export interface TokenInfo {
 
 export default defineComponent({
   name: "InteractiveTokens",
+  components: {TooltipContent},
   props: {
     tokens: {
       type: Array as PropType<TokenInfo[]>,
@@ -112,9 +81,17 @@ export default defineComponent({
     showHoverFor: {
       type: Number,
       default: -1
+    },
+    showMiniTT:{
+      type:Boolean,
+      default:false
+    },
+    areSelected: {
+      type: Array as PropType<number[]>,
+      default: []
     }
   },
-  emits: ["hoverChanged"],
+  emits: ["hoverChanged", "tokenClicked"],
   setup(props, ctx) {
     const tt = reactive({
       rightAligned: false,
@@ -125,6 +102,7 @@ export default defineComponent({
 
     let tokenRefs = [] as Element[];
     const addTokenRef = el => {
+      // console.log("---  addtok");
       // console.log(el,"--- el");
       tokenRefs.push(el);
     }
@@ -135,7 +113,7 @@ export default defineComponent({
     const currentTokenInfo = ref(null as TokenInfo);
 
     const updateTT = index => {
-      console.log(index, "--- index");
+      // console.log(index, "--- index");
       if (index < 0) tt.visible = false;
       else {
         const bb = (tokenRefs[index] as Element).getBoundingClientRect();
@@ -165,27 +143,29 @@ export default defineComponent({
       ctx.emit('hoverChanged', {index})
     }
 
+    const mouseClicked = (index) => {
+      ctx.emit('tokenClicked', {index})
+    }
+
     const mouseLeave = () => {
       ctx.emit('hoverChanged', {index: -1})
       // tt.visible = false;
     }
 
+    onUpdated(() => {
+      tokenRefs.forEach(r => {
+        // console.log("tr--- ");
+        // console.log(r.getBoundingClientRect(),"--- r.getBoundingClientRect()");
+      })
+    })
 
-    const formatNumbers = format('.3f');
-    const conditionalColor = (x, rank = true) => {
-      if (rank)
-        return x > 0 ? '#d6604d' : (x < 0 ? '#4393c3' : null)
-      else
-        return x > 0 ? '#4393c3' : (x < 0 ? '#d6604d' : null)
-    }
 
     return {
       mouseEnter,
       mouseLeave,
+      mouseClicked,
       tt,
       currentTokenInfo,
-      formatNumbers,
-      conditionalColor,
       addTokenRef
     }
   }
@@ -211,28 +191,11 @@ export default defineComponent({
   /*background-color: red;*/
   /*border-radius: 10px;*/
   transition: 100ms;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  pointer-events: none;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 9pt;
   background-color: #eee;
   border: 2px solid #2c2d4d;
   padding: 5px;
 }
 
-.tooltipSub {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-}
-
-
-.tt-c {
-  white-space: nowrap;
-  padding: 3px 5px;
-}
 
 .fade-enter-active,
 .fade-leave-active {
