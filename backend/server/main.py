@@ -109,7 +109,7 @@ class AvailableMetrics(str, Enum):
     max_clamped_rank_diff = "max_clamped_rank_diff"
     avg_prob_diff = "avg_prob_diff"
     max_prob_diff = "max_prob_diff"
-    kl = "kl"
+    # kl = "kl"
     avg_topk_diff = "avg_topk_diff"
     max_topk_diff = "max_topk_diff"
 

@@ -21,7 +21,7 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     rank_diff = r2 - r1
     prob_diff = p2 - p1
     clamped_rank_diff = clamped_r2 - clamped_r1
-    kl_diff = F.kl_div(torch.tensor(p1), torch.tensor(p2), reduction="sum")
+    # kl_diff = F.kl_div(torch.tensor(p1), torch.tensor(p2), reduction="sum")
 
     topk_token_set1 = [set(t) for t in ex1.topk_token_ids]
     topk_token_set2 = [set(t) for t in ex2.topk_token_ids]
@@ -35,7 +35,7 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
         "max_clamped_rank_diff": np.max(clamped_rank_diff),
         "avg_prob_diff": np.mean(prob_diff),
         "max_prob_diff": np.max(prob_diff),
-        "kl": kl_diff.item(),
+        # "kl": kl_diff.item(),
         "avg_topk_diff": n_topk_diff.mean(),
         "max_topk_diff": n_topk_diff.max()
     }
