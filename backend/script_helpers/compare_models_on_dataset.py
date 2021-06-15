@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset
+from analysis.helpers import topk_token_diff
 from tqdm import tqdm
 import pandas as pd
 import path_fixes as pf
@@ -22,10 +23,7 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     prob_diff = p2 - p1
     clamped_rank_diff = clamped_r2 - clamped_r1
     # kl_diff = F.kl_div(torch.tensor(p1), torch.tensor(p2), reduction="sum")
-
-    topk_token_set1 = [set(t) for t in ex1.topk_token_ids]
-    topk_token_set2 = [set(t) for t in ex2.topk_token_ids]
-    n_topk_diff = np.array([len(s1.difference(s2)) for s1, s2 in zip(topk_token_set1, topk_token_set2)])
+    n_topk_diff = topk_token_diff(ex1.topk_token_ids, ex2.topk_token_ids)
 
     return {
         "n_tokens": len(r1),

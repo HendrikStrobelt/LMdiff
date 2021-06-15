@@ -5,6 +5,7 @@ import transformers
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoModel, AutoModelWithLMHead
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from hashlib import sha256
+from .helpers import topk_token_diff
 
 import torch
 import h5py
@@ -281,7 +282,7 @@ def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
         "diff": {
             "rank": parsed_output2.ranks - parsed_output1.ranks,
             "prob": parsed_output2.probs - parsed_output1.probs,
-            "rank_clamp": clamp(parsed_output2.ranks.cpu()) - clamp(parsed_output1.ranks.cpu())
-            # "kl": kl_div(parsed_output1.probs, parsed_output2.probs, reduction="sum") # No meaning
+            "rank_clamp": clamp(parsed_output2.ranks.cpu()) - clamp(parsed_output1.ranks.cpu()),
+            "topk": topk_token_diff(parsed_output1.topk_token_ids.tolist(), parsed_output2.topk_token_ids.tolist())
         }
     }
