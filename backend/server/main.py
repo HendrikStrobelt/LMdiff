@@ -276,9 +276,6 @@ def new_suggestions(
         )[:k]
         results_sign = np.ones(len(df_sorted))
 
-    print(f"RES SIGN == 1 (leaning `{m2}` if probability, `{m1}` if rank): ", (results_sign == 1).sum())
-    print("RES SIGN == 0 (same rank and prob): ", (results_sign == 0).sum())
-    print("RES SIGN == -1 (leaning `{m1} if probability, `{m2}` if rank): ", (results_sign == -1).sum())
     metrics = df_sorted.to_dict(orient="index")
 
     def proc_data_row(x1, x2):

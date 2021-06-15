@@ -127,10 +127,16 @@ class AutoLMPipeline():
                 # output.attentions = [a[:,:,:-1, :-1] for a in output.attentions]
 
             elif self.is_maskable:
+                    
                 output.logits = reduce_logits(output.logits)
                 tids = tids[0] # Where everything is unmasked
                 output.attentions = torch.cat([reduce_attentions(a, i).unsqueeze(0) for i, a in enumerate(output.attentions)], dim=0)
 
+                # Remove CLS and SEP
+                if True:
+                    output.logits = output.logits[1:-1]
+                    output.attentions = output.attentions[:,:,1:-1,1:-1]
+                    tids = tids[1:-1]
             else:
                 raise ValueError("Unhandled model type. Model type is not autoregressive or maskable")
 
