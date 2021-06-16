@@ -4,8 +4,8 @@ from typing import *
 from pathlib import Path
 import numpy as np
 import torch
-from torch.nn import functional as F
-from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset
+from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset, model_path2name, model_name2path
+from analysis.helpers import topk_token_diff
 from tqdm import tqdm
 import pandas as pd
 import path_fixes as pf
@@ -21,11 +21,8 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     rank_diff = r2 - r1
     prob_diff = p2 - p1
     clamped_rank_diff = clamped_r2 - clamped_r1
-    kl_diff = F.kl_div(torch.tensor(p1), torch.tensor(p2), reduction="sum")
-
-    topk_token_set1 = [set(t) for t in ex1.topk_token_ids]
-    topk_token_set2 = [set(t) for t in ex2.topk_token_ids]
-    n_topk_diff = np.array([len(s1.difference(s2)) for s1, s2 in zip(topk_token_set1, topk_token_set2)])
+    # kl_diff = F.kl_div(torch.tensor(p1), torch.tensor(p2), reduction="sum")
+    n_topk_diff = topk_token_diff(ex1.topk_token_ids, ex2.topk_token_ids)
 
     return {
         "n_tokens": len(r1),
@@ -35,7 +32,7 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
         "max_clamped_rank_diff": np.max(clamped_rank_diff),
         "avg_prob_diff": np.mean(prob_diff),
         "max_prob_diff": np.max(prob_diff),
-        "kl": kl_diff.item(),
+        # "kl": kl_diff.item(),
         "avg_topk_diff": n_topk_diff.mean(),
         "max_topk_diff": n_topk_diff.max()
     }
@@ -49,10 +46,12 @@ def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
     ds_name = ds1.dataset_name
     assert ds1.dataset_checksum == ds2.dataset_checksum, "The two datasets should have the same checksum of contents"
 
-    # Below is BROKEN because python's `hash` function changes between process runs
     assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
 
-    default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
+    m1_save_name = model_name2path(ds1.model_name)
+    m2_save_name = model_name2path(ds2.model_name)
+
+    default_name = f"{m1_save_name}_{m2_save_name}_{ds_name}.csv"
     output_f = output_dir / default_name
 
     if output_f.exists():

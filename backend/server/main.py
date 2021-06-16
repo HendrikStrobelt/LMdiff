@@ -1,9 +1,11 @@
 import argparse
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
+from analysis.helpers import model_name2path, model_path2name
 import os
 import json
 import re
 import torch
+import numpy as np
 from enum import Enum
 from pathlib import Path
 from typing import *
@@ -14,8 +16,6 @@ from dataclasses import dataclass
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 import uvicorn
 import server.types as types
 from server.utils import deepdict_to_json, SortOrder
@@ -25,6 +25,7 @@ import path_fixes as pf
 from api import LMComparer, ModelManager
 
 __author__ = "DreamTeam V1.5: Hendrik Strobelt, Sebastian Gehrmann, Ben Hoover"
+
 
 @lru_cache
 def get_args():
@@ -38,49 +39,82 @@ def get_args():
     )
     parser.add_argument("--dir", type=str, default=os.path.abspath("data"))
     parser.add_argument("--suggestions", type=str, default=os.path.abspath("data"))
-    parser.add_argument("--config", "-c", type=str, default=None, help="Use a custom analysis folder rather than the default paths to compare models")
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        default=None,
+        help="Use a custom analysis folder rather than the default paths to compare models",
+    )
+    parser.add_argument(
+        "--tokenization-type",
+        "-t",
+        type=str,
+        default="gpt",
+        help="One of {'gpt', 'bert'}. Tells the frontend how to visualize the tokens used by the model.",
+    )
 
     args, _ = parser.parse_known_args()
     return args
-    
+
+
 @dataclass
 class ServerConfig:
     ANALYSIS: Union[Path, str]
     COMPARISONS: Union[Path, str]
     custom_dir: bool = False
-    m1: Optional[str] = None # Only available if 'custom_dir' is true
-    m2: Optional[str] = None # Only available if 'custom_dir' is true
-    dataset: Optional[str] = None # Only available if 'custom_dir' is true
+    m1: Optional[str] = None  # Only available if 'custom_dir' is true
+    m2: Optional[str] = None  # Only available if 'custom_dir' is true
+    dataset: Optional[str] = None  # Only available if 'custom_dir' is true
+
 
 @lru_cache
 def get_config() -> ServerConfig:
     config_dir = get_args().config
     if config_dir is None:
-        return ServerConfig(ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_dir=False)
-    
+        return ServerConfig(
+            ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_dir=False
+        )
+
     config_dir = Path(config_dir)
 
-    with open(config_dir / "metadata.json", 'r') as fp:
+    with open(config_dir / "metadata.json", "r") as fp:
         metadata = json.load(fp)
 
-    dataset = Path(metadata['dataset']).stem
-    
-    return ServerConfig(ANALYSIS=config_dir, COMPARISONS=config_dir, custom_dir=True, m1=metadata['m1'], m2=metadata['m2'], dataset=dataset)
+    dataset = Path(metadata["dataset"]).stem
+
+    return ServerConfig(
+        ANALYSIS=config_dir,
+        COMPARISONS=config_dir,
+        custom_dir=True,
+        m1=metadata["m1"],
+        m2=metadata["m2"],
+        dataset=dataset,
+    )
 
 
 @lru_cache
 def get_pipeline(name: str):
     return AutoLMPipeline.from_pretrained(name)
 
+
 @lru_cache
 def get_comparison_results(m1: str, m2: str, dataset: str):
-    results_fname = get_config().COMPARISONS / f"{m1}_{m2}_{dataset}.csv"
+    m1_path_name = model_name2path(m1)
+    m2_path_name = model_name2path(m2)
+    results_fname = (
+        get_config().COMPARISONS / f"{m1_path_name}_{m2_path_name}_{dataset}.csv"
+    )
     compared_results = pd.read_csv(str(results_fname), index_col=0)
     return compared_results
 
+
 @lru_cache
 def get_analysis_results(dataset: str, mname: str):
-    return H5AnalysisResultDataset.from_file(str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{mname}.h5"))
+    model_path_name = model_name2path(mname)
+    return H5AnalysisResultDataset.from_file(
+        str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{model_path_name}.h5")
+    )
 
 
 def list_all_datasets():
@@ -107,7 +141,7 @@ class AvailableMetrics(str, Enum):
     max_clamped_rank_diff = "max_clamped_rank_diff"
     avg_prob_diff = "avg_prob_diff"
     max_prob_diff = "max_prob_diff"
-    kl = "kl"
+    # kl = "kl"
     avg_topk_diff = "avg_topk_diff"
     max_topk_diff = "max_topk_diff"
 
@@ -150,35 +184,19 @@ def send_data(path):
 # ======================================================================
 ## MAIN API ##
 # ======================================================================
-@app.get("/api/get-comparable-models")
-def get_comparable_models(m: str):
-    """Find all comparable models to a given model string name"""
-
-    COMPARABLE_MODELS = [
-        set(['gpt2', 'distilgpt2']),
-        set(['bert', 'distilbert'])
-    ]
-
-    for mset in COMPARABLE_MODELS:
-        if m in mset:
-            out = mset.copy()
-            out.discard(m)
-            return list(out)
-
-    return []
-
-
 @app.get("/api/available-datasets")
 def get_available_datasets(m1: str, m2: str):
     if get_config().custom_dir:
         return [get_config().dataset]
 
-    if m1 == '' or m2 == '':
+    if m1 == "" or m2 == "":
         return []
 
     h5paths = list_all_datasets()
-    m1_h5 = set([p[0] for p in h5paths if p[1] == m1])
-    m2_h5 = set([p[0] for p in h5paths if p[1] == m2])
+    m1name = model_name2path(m1)
+    m2name = model_name2path(m2)
+    m1_h5 = set([p[0] for p in h5paths if p[1] == m1name])
+    m2_h5 = set([p[0] for p in h5paths if p[1] == m2name])
     available_datasets = list(m1_h5.intersection(m2_h5))
     return available_datasets
 
@@ -187,17 +205,29 @@ def get_available_datasets(m1: str, m2: str):
 def get_all_models():
     if get_config().custom_dir:
         return [
-            {"model": get_config().m1},
-            {"model": get_config().m2},
+            {
+                "model": get_config().m1,
+                "type": "custom",
+                "token": get_args().tokenization_type,
+            },
+            {
+                "model": get_config().m2,
+                "type": "custom",
+                "token": get_args().tokenization_type,
+            },
         ]
 
     res = [
         {"model": "gpt2", "type": "gpt", "token": "gpt"},
         {"model": "distilgpt2", "type": "gpt", "token": "gpt"},
-        {"model": "bert-base-uncased", "type": "bert", "token": "bert"},
-        {"model": "distilbert-base-uncased", "type": "bert", "token": "bert"},
-        # {"model": "lysandre/arxiv-nlp"},
-        # {"model": "lysandre/arxiv"},
+        {"model": "lysandre/arxiv-nlp", "type": "gpt", "token": "gpt"},
+        {"model": "bert-base-uncased", "type": "bert-uncased", "token": "bert"},
+        {"model": "distilbert-base-uncased", "type": "bert-uncased", "token": "bert"},
+        {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "bert-uncased", "token": "bert"},
+        {"model": "bert-base-cased", "type": "bert-cased", "token": "bert"},
+        {"model": "distilbert-base-cased", "type": "bert-cased", "token": "bert"},
+
+        # {"model": "lysandre/arxiv", "type": "gpt", "token": "gpt"},
     ]
 
     return res
@@ -224,18 +254,19 @@ def specific_attention(payload: types.SpecificAttentionRequest):
 
     return {
         "m1": deepdict_to_json(a1, ndigits=4, force_float=True),
-        "m2": deepdict_to_json(a2, ndigits=4, force_float=True)
+        "m2": deepdict_to_json(a2, ndigits=4, force_float=True),
     }
 
 
 @app.get("/api/new-suggestions")
 def new_suggestions(
-        m1: str,
-        m2: str,
-        dataset: str,
-        metric: AvailableMetrics,
-        order: SortOrder = "descending",
-        k: int = 50,
+    m1: str,
+    m2: str,
+    dataset: str,
+    metric: AvailableMetrics,
+    order: SortOrder = "descending",
+    k: int = 50,
+    sort_by_abs: bool = True,
 ):
     f"""Get the comparison between model m1 and m2 on the dataset. Rank the output according to a valid metric
 
@@ -246,6 +277,7 @@ def new_suggestions(
         metric (str): One of the available metrics: '{available_metrics}'
         order (SortOrder, optional): If "ascending", sort in order of least to greatest. Defaults to "descending".
         k (int, optional): The number of interesting instances to return. Defaults to 50.
+        sort_by_abs (bool): Sort by the absolute value. Defaults to True
 
     Returns:
         Object containing information to statically analyze two models.
@@ -256,9 +288,22 @@ def new_suggestions(
     ds2 = get_analysis_results(dataset, m2)
     compared_results = get_comparison_results(m1, m2, dataset)
 
-    df_sorted = compared_results.sort_values(
-        by=metric, ascending=("ascending" == order)
-    )[:k]
+    if sort_by_abs:
+        results = np.array(compared_results[metric])
+        results_sign = np.sign(results)
+        results_abs = np.abs(results)
+
+        sign = -1 if order == "descending" else 1
+        sort_idxs = np.argsort(sign * results_abs)[:k]
+        df_sorted = compared_results.iloc[sort_idxs]
+        results_sign = results_sign[sort_idxs]
+
+    else:
+        df_sorted = compared_results.sort_values(
+            by=metric, ascending=("ascending" == order)
+        )[:k]
+        results_sign = np.ones(len(df_sorted))
+
     metrics = df_sorted.to_dict(orient="index")
 
     def proc_data_row(x1, x2):
@@ -286,8 +331,11 @@ def new_suggestions(
     result = [
         deepdict_to_json(o, ndigits=3)
         for o in [
-            dict({"example_idx": k, "metrics": v}, **proc_data_row(ds1[k], ds2[k]))
-            for k, v in metrics.items()
+            dict(
+                {"example_idx": k, "metrics": v, "sign": results_sign[i]},
+                **proc_data_row(ds1[k], ds2[k]),
+            )
+            for i, (k, v) in enumerate(metrics.items())
         ]
     ]
 
@@ -301,38 +349,6 @@ def new_suggestions(
             "k": k,
         },
         "result": result,
-    }
-
-
-@app.get("/api/suggestions")
-def get_suggestions(m1: str, m2: str, corpus: str = "wiki_split"):
-    # corpus = suggestion.get('corpus', 'wiki_split')
-    # suggestion['corpus'] = corpus
-    # print(corpus)
-    inverse_order = False
-    base_path = Path(get_args().suggestions)
-
-    models = [m1, m2]
-    if m1 > m2:
-        models = [m2, m1]
-        inverse_order = True
-    names = sorted([re.sub(r"[/\-]", "_", n) for n in models])
-    json_name = "__".join(names) + "__phrases.json"
-    filename = base_path / corpus / json_name
-
-    if os.path.exists(filename):
-        res = json.load(open(filename, "r"))
-        res["inverse_order"] = inverse_order
-    else:
-        res = None
-
-    return {
-        "request": {
-            "m1": m1,
-            "m2": m2,
-            "corpus": corpus,
-        },
-        "result": res,
     }
 
 
