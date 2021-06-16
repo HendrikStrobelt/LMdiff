@@ -3,6 +3,7 @@ import path_fixes as pf
 from pathlib import Path
 from tqdm import tqdm
 import h5py
+from analysis import model_name2path, model_path2name
 from analysis.analysis_pipeline import AutoLMPipeline, collect_analysis_info
 from analysis.analysis_results_dataset import H5AnalysisResultDataset
 from analysis.text_dataset import TextDataset
@@ -82,10 +83,12 @@ def create_analysis_results(
     """
     dataset_path = Path(dataset_path)
 
+    model_save_name = model_name2path(model_name)
+
     if first_n is None:
-        default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{model_name}.h5"
+        default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{model_save_name}.h5"
     else:
-        default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{model_name}_first{first_n}.h5"
+        default_name = f"{dataset_path.stem}{pf.ANALYSIS_DELIM}{model_save_name}_first{first_n}.h5"
 
     output_d = pf.ANALYSIS if output_d is None else Path(output_d)
     output_d.mkdir(parents=True, exist_ok=True)

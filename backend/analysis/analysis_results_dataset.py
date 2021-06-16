@@ -1,6 +1,6 @@
 from typing import *
 import h5py
-from analysis.analysis_pipeline import LMAnalysisOutputH5
+from .helpers import LMAnalysisOutputH5
 import numpy as np
 from pathlib import Path
 
@@ -40,7 +40,7 @@ class H5AnalysisResultDataset:
         return LMAnalysisOutputH5.from_group(grp)
     
     def __len__(self):
-        return len(self.h5f.keys()) - 1 # for vocabulary
+        return len(self.h5f.keys()) - 1 # 1 key is owned by the vocabulary
 
     def __getitem__(self, val:Union[int, slice, list, np.ndarray]) -> Union[LMAnalysisOutputH5, List[LMAnalysisOutputH5]]:
         if isinstance(val, int):

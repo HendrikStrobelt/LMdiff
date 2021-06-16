@@ -4,8 +4,7 @@ from typing import *
 from pathlib import Path
 import numpy as np
 import torch
-from torch.nn import functional as F
-from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset
+from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset, model_path2name, model_name2path
 from analysis.helpers import topk_token_diff
 from tqdm import tqdm
 import pandas as pd
@@ -47,10 +46,12 @@ def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
     ds_name = ds1.dataset_name
     assert ds1.dataset_checksum == ds2.dataset_checksum, "The two datasets should have the same checksum of contents"
 
-    # Below is BROKEN because python's `hash` function changes between process runs
     assert ds1.vocab_hash == ds2.vocab_hash, "The two datasets should be created by models that share the same vocabulary"
 
-    default_name = f"{ds1.model_name}_{ds2.model_name}_{ds_name}.csv"
+    m1_save_name = model_name2path(ds1.model_name)
+    m2_save_name = model_name2path(ds2.model_name)
+
+    default_name = f"{m1_save_name}_{m2_save_name}_{ds_name}.csv"
     output_f = output_dir / default_name
 
     if output_f.exists():

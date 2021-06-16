@@ -18,18 +18,6 @@ def test_get_projects():
     assert len(r) > 0
     assert 'model' in set(r[0].keys())
 
-def test_get_suggestions():
-    request = {
-        "m1": "gpt2",
-        "m2": "distilgpt2",
-        "corpus": "wiki_split"
-    }
-    response = client.get(make_url("/api/suggestions", request))
-    r = response.json()
-    assert r['request']['m1'] == request['m1']
-    assert r['request']['m2'] == request['m2']
-    assert r['request']['corpus'] == request['corpus']
-
 def test_analyze():
     request = {
         "m1": "gpt2",
@@ -40,17 +28,3 @@ def test_analyze():
     r = response.json()
     assert r['request']['text'] == request['text']
     # More assertions needed here
-
-def test_comparable_models():
-    requests = [
-        { "m": "gpt2" },
-        { "m": "bert"}
-    ]
-    answers = [
-        ["distilgpt2"], ["distilbert"]
-    ]
-
-    for request, answer in zip(requests, answers):
-        response = client.get(make_url("/api/get-comparable-models", request))
-        r = response.json()
-        assert r == answer
