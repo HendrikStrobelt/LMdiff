@@ -7,7 +7,7 @@ From the root directory:
 
 ```
 conda env create -f environment.yml
-conda activate <MyProjectName>
+conda activate LMdiff
 pip install -e .
 dvc pull
 ```
