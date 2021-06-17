@@ -217,15 +217,17 @@ def get_all_models():
             },
         ]
 
+# ☘🍀🌼🌻🌺🌹💐🌸
+
     res = [
-        {"model": "gpt2", "type": "gpt", "token": "gpt"},
-        {"model": "distilgpt2", "type": "gpt", "token": "gpt"},
-        {"model": "lysandre/arxiv-nlp", "type": "gpt", "token": "gpt"},
-        {"model": "bert-base-uncased", "type": "bert-uncased", "token": "bert"},
-        {"model": "distilbert-base-uncased", "type": "bert-uncased", "token": "bert"},
-        {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "bert-uncased", "token": "bert"},
-        {"model": "bert-base-cased", "type": "bert-cased", "token": "bert"},
-        {"model": "distilbert-base-cased", "type": "bert-cased", "token": "bert"},
+        {"model": "gpt2", "type": "🍀", "token": "gpt"},
+        {"model": "distilgpt2", "type": "🍀", "token": "gpt"},
+        {"model": "lysandre/arxiv-nlp", "type": "🍀", "token": "gpt"},
+        {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
+        {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
+        {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
+        {"model": "bert-base-cased", "type": "🌺", "token": "bert"},
+        {"model": "distilbert-base-cased", "type": "🌺", "token": "bert"},
 
         # {"model": "lysandre/arxiv", "type": "gpt", "token": "gpt"},
     ]
