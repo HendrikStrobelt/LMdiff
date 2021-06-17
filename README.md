@@ -9,7 +9,6 @@ From the root directory:
 conda env create -f environment.yml
 conda activate LMdiff
 pip install -e .
-dvc pull
 ```
 
 Run the backend in development mode, deploying default models and configurations:
@@ -63,6 +62,15 @@ def ds2str(glue):
 
 create_text_dataset(glue_mrpc, name, ds2str, pf.DATASETS)
 ```
+
+## (Admin) Getting the Data
+Models and datasets for the deployed app are stored on the cloud and require a private `.dvc/config` file.
+
+With the correct config:
+
+```dvc pull```
+
+will populate the data directories correctly.
 
 
 
