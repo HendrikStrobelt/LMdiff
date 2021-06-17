@@ -142,7 +142,8 @@
       </div>
       <div style="margin-top: 20px">
         <div class="subheading">Selected Tokens</div>
-        <div v-if="tooltipList.length===0"> (Click on tokens to select some.) </div>
+        <div v-if="tooltipList.length===0"> (Click on tokens to select some.)
+        </div>
         <MultiSelectTooltips :tooltip-list="tooltipList"
                              @closeTT="updateTokenSelection"
                              @hoverChanged="hoverChanged"
@@ -225,8 +226,8 @@ export default defineComponent({
           tokenization: tokenization.value
         } as ToolTipInfo]
             .sort((a, b) => ascending(a.index, b.index))
-      }else{
-        tooltipList.value.splice(pos,1);
+      } else {
+        tooltipList.value.splice(pos, 1);
       }
 
     }
@@ -254,7 +255,8 @@ export default defineComponent({
       }
       api.all_ds(selectedM1.value, selectedM2.value).then(res => {
         datasets.value = res;
-        currentDataset.value = res[0];
+        if (res.length > 0) currentDataset.value = res[0];
+        sampleTexts.value = [];
       })
     })
 
