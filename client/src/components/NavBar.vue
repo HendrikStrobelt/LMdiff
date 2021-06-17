@@ -28,7 +28,7 @@
             v-for="model in allModels"
             :value="model.model"
             :key="model.model"
-        >{{ model.model }}</option></select>
+        >{{model.type}} -{{ model.model }}</option></select>
       </span>&nbsp;
       <span
           style="background-color: #4393c3;padding: 2px 5px;white-space: nowrap;">
@@ -39,7 +39,7 @@
             v-for="model in allModels"
             :value="model.model"
             :key="model.model"
-        >{{ model.model }}</option></select>
+        >{{model.type}} -{{ model.model }}</option></select>
 
       </span>
 
