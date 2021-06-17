@@ -32,7 +32,7 @@
     </div>
   </transition>
   <div v-if="!states.modelsMatch" style="width:100%; padding: 5px; box-sizing: border-box;
-  text-align: center;color: #bb1e1e">
+  text-align: center;background-color: #bb1e1e; color:white;">
     -- Please choose compatible models --
   </div>
   <div style="width: 100%; padding: 5px;box-sizing:border-box;" v-else>

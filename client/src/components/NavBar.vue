@@ -23,7 +23,7 @@
         <label for="m1_select">model1:</label>
         <!--         @update:modelValue="(e)=> console.log(e)"-->
         <select id="m1_select" :value="selectedM1"
-                @input="$emit('update:selectedM1', $event.target.value)"
+                @input="emitValue('update:selectedM1', $event)"
         ><option
             v-for="model in allModels"
             :value="model.model"
@@ -34,7 +34,7 @@
           style="background-color: #4393c3;padding: 2px 5px;white-space: nowrap;">
         <label for="m2_select">model2:</label>
         <select id="m2_select" :value="selectedM2"
-                @input="$emit('update:selectedM2', $event.target.value)"
+                @input="emitValue('update:selectedM2', $event)"
         ><option
             v-for="model in allModels"
             :value="model.model"
@@ -56,7 +56,18 @@ export default defineComponent({
     selectedM1: String,
     selectedM2: String
   },
-  emits: ["update:selectedM1", "update:selectedM2", "aboutClicked"]
+  emits: ["update:selectedM1", "update:selectedM2", "aboutClicked"],
+  setup(props,ctx){
+    //todo: just a workaround for TS
+    const emitValue = (signal, e) =>{
+      ctx.emit(signal, e.target.value)
+    }
+    return{
+      emitValue
+    }
+
+  }
+
 })
 </script>
 <style scoped>
