@@ -53,7 +53,7 @@ export default defineComponent({
     }
     const mouseEnter = (index) => {
       console.log(index, "--- index");
-      ctx.emit('hoverChanged', {index, mini: index >= 0})
+      ctx.emit('hoverChanged', {index, mini: true})
     }
     return {closeTT, mouseEnter}
   }

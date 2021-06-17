@@ -84,7 +84,7 @@
     <!--suppress HtmlFormInputWithoutLabel -->
     <textarea id="test_text"
               style="width:100%; box-sizing:border-box;border:1px solid lightgray;
-              height: 100px;font: inherit;"
+              height: 50px;font: inherit;"
               v-model="customText"/>
     <button @click="analyzeText"
             :disabled="states.analyzeRequestSent"
@@ -386,7 +386,7 @@ export default defineComponent({
 }
 
 h3 {
-  background-color: #eeeeee;
+  /*background-color: #eeeeee;*/
   border-top: 1px solid #2c2d4d;
   color: #2c2d4d;
 }

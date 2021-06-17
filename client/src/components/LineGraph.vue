@@ -55,7 +55,7 @@ export default defineComponent({
     },
     showHoverFor: {
       type: Number,
-      default:-1
+      default: -1
     }
 
   },
@@ -65,7 +65,7 @@ export default defineComponent({
     const yAxisRef = ref(null as SVGGElement);
     const hoverTrigger = ref(null as SVGRectElement);
     const svgDims = reactive({width: 100, height: 80})
-    const stepSize = 5;
+    const stepSize = ref(5);
     const intents = {
       l: 40,
       b: 25,
@@ -79,7 +79,7 @@ export default defineComponent({
     let triggerMove = ref((e: MouseEvent) => {
     })
 
-    const hoverOut = () =>{
+    const hoverOut = () => {
       ctx.emit('hoverChanged', -1)
     }
 
@@ -91,7 +91,8 @@ export default defineComponent({
     watch(() => props.values, (newValues) => {
       console.log("watch--- ");
       const dataLength = newValues ? newValues[0].length : 0;
-      const plotLength = dataLength * stepSize;
+      stepSize.value = dataLength < 30 ? 15 : (dataLength < 60) ? 8 : 5
+      const plotLength = dataLength * stepSize.value;
       const [min, max] = extent(flatten(newValues));
 
       svgDims.width = intents.l + intents.r + plotLength
@@ -110,7 +111,7 @@ export default defineComponent({
       }
 
       const lineGen = line<number>()
-          .x((d, i) => scaleX(i) + 0.5 * stepSize)
+          .x((d, i) => scaleX(i) + 0.5 * stepSize.value)
           .y(d => scaleY(d))
           .curve(curveStep);
 
@@ -126,7 +127,7 @@ export default defineComponent({
           .attr('transform', `translate(0,${svgDims.height - intents.b})`)
 
       select(yAxisRef.value)
-          .call(axisLeft(scaleY).ticks(Math.floor(svgDims.height/20)))
+          .call(axisLeft(scaleY).ticks(Math.floor(svgDims.height / 20)))
           .attr('transform', `translate(${intents.l},0)`)
 
 
@@ -163,7 +164,7 @@ export default defineComponent({
   cursor: crosshair;
 }
 
-.hoverBar{
+.hoverBar {
   opacity: .3;
   color: #eee;
   pointer-events: none;
