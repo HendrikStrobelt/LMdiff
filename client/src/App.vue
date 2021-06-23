@@ -108,7 +108,7 @@
           </div>
           <div style="overflow-y: scroll; max-height: 150px;">
             <div class="sampleText"
-                 v-for="s in sampleTexts" :key="s.text"
+                 v-for="s in sampleTexts" :key="(s,i)=> s.text+i"
                  @click="useSample(s.text)"
             > {{ s.text }} <span
                 class="measureNumber"> ({{ s.measure }})</span></div>
