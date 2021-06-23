@@ -36,67 +36,92 @@
     -- Please choose compatible models --
   </div>
   <div style="width: 100%; padding: 5px;box-sizing:border-box;" v-else>
-    <h3>Search for interesting snippets</h3>
-    <div v-if="datasets.length>0">
-      <div class="subheading">Select dataset and metric</div>
-      <div style="display: inline-block;">
-        <!--        <label for="ds-select" class="subheading">Select dataset and metric </label>-->
-        <select name="dataset" id="ds-select" v-model="currentDataset"
-                style="background-color: #eee">
-          <option v-for="ds in datasets" :key="ds" :value="ds">{{ ds }}</option>
-        </select>
-      </div>
-      <div style="display: inline-block; margin-left: 1em;">
-        <!--        <label for="metric-select">Select metric: </label>-->
-        <select name="dataset" id="metric-select" v-model="currentMetric"
-                style="background-color: #eee">
-          <option v-for="metric in availableMetrics" :key="metric"
-                  :value="metric">{{ metric }}
-          </option>
-        </select>
-      </div>
-      <div style="display: inline-block; margin-left: 1em;">
-        <button :disabled="!currentDataset.length || states.searchRequestSent"
-                @click="searchForSamples">
-          search
-        </button>
-      </div>
-    </div>
-    <div v-else> Argh... no snippet dataset available for the current selection
-      of models.
-    </div>
-    <div v-if="states.searchRequestSent"> Searching ....</div>
-    <div v-if="sampleTexts.length>0"
-         style="margin-top: 10px; display: flex; flex-wrap: nowrap; flex-direction: column;">
-      <div class="subheading"> Search results (click for details)
-      </div>
-      <div style="overflow-y: scroll; max-height: 150px;">
-        <div class="sampleText"
-             v-for="s in sampleTexts" :key="s.text"
-             @click="useSample(s.text)"
-        > {{ s.text }} <span
-            class="measureNumber"> ({{ s.measure }})</span></div>
-      </div>
-    </div>
-
-    <h3 id="Inspector">Or enter snippet text
+    <h3 id="Inspector">
+      <svg class="question-icon" v-html="states.showEnter?caretUp:caretDown"
+           @click="states.showEnter = !states.showEnter"></svg>
+      Enter own text snippet
+      <span>
+      <svg data-tippy-content="Enter your own text" class="question-icon" v-html="questionMark"></svg>
+      </span>
     </h3>
-    <!--suppress HtmlFormInputWithoutLabel -->
+
+    <transition name="fade2">
+      <div v-if="states.showEnter">
     <textarea id="test_text"
               style="width:100%; box-sizing:border-box;border:1px solid lightgray;
               height: 50px;font: inherit;"
               v-model="customText"/>
-    <button @click="analyzeText"
-            :disabled="states.analyzeRequestSent"
-            style="margin: 10px 0"
-    > analyze text
-    </button>
+        <button @click="analyzeText"
+                :disabled="states.analyzeRequestSent"
+                style="margin: 10px 0"
+        > analyze text
+        </button>
 
-    <div style="padding: 10px 0" v-show="states.analyzeRequestSent"> Request
+      </div>
+    </transition>
+    <h3>
+      <svg class="question-icon" v-html="states.showSearch?caretUp:caretDown"
+           @click="states.showSearch = !states.showSearch"></svg>
+      Or search for interesting snippets
+      <svg data-tippy-content="Search for interesting text snippets in pre-analyzed datasets
+      using a summary diff measure (like, e.g., average rank diff) per snippet." class="question-icon" v-html="questionMark"></svg>
+    </h3>
+    <transition name="fade2">
+      <div v-if="states.showSearch">
+        <div v-if="datasets.length>0">
+          <div class="subheading">Select dataset and metric</div>
+          <div style="display: inline-block;">
+            <!--        <label for="ds-select" class="subheading">Select dataset and metric </label>-->
+            <select name="dataset" id="ds-select" v-model="currentDataset"
+                    style="background-color: #eee">
+              <option v-for="ds in datasets" :key="ds" :value="ds">{{
+                  ds
+                }}
+              </option>
+            </select>
+          </div>
+          <div style="display: inline-block; margin-left: 1em;">
+            <!--        <label for="metric-select">Select metric: </label>-->
+            <select name="dataset" id="metric-select" v-model="currentMetric"
+                    style="background-color: #eee">
+              <option v-for="metric in availableMetrics" :key="metric.k"
+                      :value="metric.k">{{ metric.d }}
+              </option>
+            </select>
+          </div>
+          <div style="display: inline-block; margin-left: 1em;">
+            <button
+                :disabled="!currentDataset.length || states.searchRequestSent"
+                @click="searchForSamples">
+              search
+            </button>
+          </div>
+        </div>
+        <div v-else> Argh... no snippet dataset available for the current
+          selection
+          of models.
+        </div>
+        <div v-if="states.searchRequestSent"> Searching ....</div>
+        <div v-if="sampleTexts.length>0"
+             style="margin-top: 10px; display: flex; flex-wrap: nowrap; flex-direction: column;">
+          <div class="subheading"> Search results (click for details)
+          </div>
+          <div style="overflow-y: scroll; max-height: 150px;">
+            <div class="sampleText"
+                 v-for="s in sampleTexts" :key="s.text"
+                 @click="useSample(s.text)"
+            > {{ s.text }} <span
+                class="measureNumber"> ({{ s.measure }})</span></div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <div
+        style="width:100%; margin: 10px 0; padding: 5px; background: #2c2d4d; color: white;"
+        v-show="states.analyzeRequestSent"> Request
       sent and processing .....
     </div>
-
-
     <div
         v-show="!states.zeroRequests && !states.analyzeRequestSent">
       <h3> Token Analysis </h3>
@@ -124,6 +149,8 @@
                   :key="dm.key"
                   :class="{selected:dm.key===currentDiffMode}"
                   @click="currentDiffMode = dm.key"
+                  :data-tippy-content="dm.description"
+                  data-tippy-trigger="mouseenter"
           >{{ dm.name }}
           </button>
         </div>
@@ -158,7 +185,14 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, reactive, ref, watch, watchEffect} from 'vue'
+import {
+  defineComponent,
+  onUpdated,
+  reactive,
+  ref,
+  watch,
+  watchEffect
+} from 'vue'
 import {AnalyzedText, AnalyzeTextResponse, API, ModelDescription} from "./api";
 import LineGraph from "./components/LineGraph.vue";
 import NavBar from "./components/NavBar.vue";
@@ -171,6 +205,11 @@ import InteractiveTokens, {
 } from "./components/InteractiveTokens.vue";
 import {available_tokenizations} from "./etc/tokenization";
 import MultiSelectTooltips, {ToolTipInfo} from "./components/MultiSelectTooltips.vue";
+import {availableMetrics} from "./etc/metrics";
+import {caretDown, caretUp, questionMark} from "./etc/symbols";
+import tippy from 'tippy.js'
+import 'tippy.js/dist/tippy.css';
+import {onMounted} from "vue"
 
 export default defineComponent({
   name: 'App',
@@ -182,7 +221,9 @@ export default defineComponent({
       zeroRequests: true,
       searchRequestSent: false,
       modelsMatch: false,
-      showAbout: true
+      showAbout: true,
+      showSearch: true,
+      showEnter: true
     })
 
     const api = new API()
@@ -195,15 +236,15 @@ export default defineComponent({
     const tokenization = ref(available_tokenizations.gpt)
     let currentResult = null as AnalyzeTextResponse;
 
-    const availableDiffModes: { key: string, name: string }[] =
+    const availableDiffModes: { key: string, name: string, description:string }[] =
         sortBy(Object.entries(diffModes)
-            .map(([key, v]) => ({key, name: v.name})), ['key'])
+            .map(([key, v]) => ({key, name: v.name, description: v.description})), ['key'])
     const currentDiffMode = ref('rank_diff_clamped')
 
     const datasets = ref([] as string[])
     const currentDataset = ref('')
 
-    const availableMetrics = ["avg_rank_diff", "max_rank_diff", "avg_clamped_rank_diff", "max_clamped_rank_diff", "avg_prob_diff", "max_prob_diff", "kl", "avg_topk_diff", "max_topk_diff"]
+
     const currentMetric = ref("avg_clamped_rank_diff")
 
     const tokenList = ref([] as TokenInfo[])
@@ -348,6 +389,20 @@ export default defineComponent({
       scroll('Inspector')
     }
 
+    onMounted(() => {
+      //
+    })
+
+    let tippyStarted = false;
+    onUpdated(() => {
+      if (!tippyStarted) {
+        const t = tippy('[data-tippy-content]', {
+          trigger: 'mouseenter click',
+        });
+        console.log(t, "--- t");
+        // tippyStarted = true;
+      }
+    })
 
     return {
       allModels,
@@ -374,7 +429,10 @@ export default defineComponent({
       tokenization,
       updateTokenSelection,
       tooltipList,
-      showMiniTT
+      showMiniTT,
+      questionMark,
+      caretUp,
+      caretDown
     }
 
   }
@@ -382,14 +440,28 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.question-icon {
+  width: 1em;
+  height: 1em;
+  position: relative;
+  top: .13em;
+  stroke: #aaa;
+  stroke-width: 2;
+}
+
+.question-icon:hover {
+  stroke: #2c2d4d;
+  stroke-width: 2.5;
+}
+
 .measureNumber {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 9pt;
 }
 
 h3 {
-  /*background-color: #eeeeee;*/
-  border-top: 1px solid #2c2d4d;
+  background-color: #eeeeee;
+  /*border-top: 1px solid #2c2d4d;*/
   color: #2c2d4d;
 }
 
@@ -442,14 +514,29 @@ h3 {
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s ease, transform .5s;
-
 }
 
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-500px);
+  z-index: -1;
 }
+
+.fade2-enter-from,
+.fade2-leave-to {
+  opacity: 0;
+  transform-origin: top left;
+  transform: scaleY(0.00001);
+  z-index: -1;
+}
+
+.fade2-enter-active,
+.fade2-leave-active {
+  transform-origin: top left;
+  transition: opacity 0.5s ease, transform .5s;
+}
+
 
 </style>
 

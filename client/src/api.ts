@@ -164,7 +164,7 @@ export class API {
   }
 
   public findSamples(m1: string, m2: string, dataset: string, metric: string,
-                     order = 'descending', k = 20): Promise<FindSampleResponse> {
+                     order = 'descending', k = 50): Promise<FindSampleResponse> {
     const payload = {
       m1, m2, dataset, metric, order, k
     }
