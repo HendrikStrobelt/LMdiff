@@ -41,7 +41,8 @@
            @click="states.showEnter = !states.showEnter"></svg>
       Enter own text snippet
       <span>
-      <svg data-tippy-content="Enter your own text" class="question-icon" v-html="questionMark"></svg>
+      <svg data-tippy-content="Enter your own text" class="question-icon"
+           v-html="questionMark"></svg>
       </span>
     </h3>
 
@@ -64,7 +65,8 @@
            @click="states.showSearch = !states.showSearch"></svg>
       Or search for interesting snippets
       <svg data-tippy-content="Search for interesting text snippets in pre-analyzed datasets
-      using a summary diff measure (like, e.g., average rank diff) per snippet." class="question-icon" v-html="questionMark"></svg>
+      using a summary diff measure (like, e.g., average rank diff) per snippet."
+           class="question-icon" v-html="questionMark"></svg>
     </h3>
     <transition name="fade2">
       <div v-if="states.showSearch">
@@ -106,12 +108,27 @@
              style="margin-top: 10px; display: flex; flex-wrap: nowrap; flex-direction: column;">
           <div class="subheading"> Search results (click for details)
           </div>
-          <div style="overflow-y: scroll; max-height: 150px;">
-            <div class="sampleText"
-                 v-for="s in sampleTexts" :key="(s,i)=> s.text+i"
-                 @click="useSample(s.text)"
-            > {{ s.text }} <span
-                class="measureNumber"> ({{ s.measure }})</span></div>
+          <div
+              style="display: flex; flex-wrap: nowrap; flex-direction: row;align-items: flex-end;">
+
+            <div
+                v-if="currentMetricObject.t !=='topk'">
+              <MiniHisto
+                  :data-points="sampleTexts.map(s=>s.measure)"
+                  :color-scheme="currentMetricObject.t==='rank'?rankDiffColors:probDiffColors"
+                  :height="150"
+                  :width="150"
+              ></MiniHisto>
+            </div>
+
+            <div
+                style="overflow-y: scroll; max-height: 150px;display: inline-block;">
+              <div class="sampleText"
+                   v-for="s in sampleTexts" :key="(s,i)=> s.text+i"
+                   @click="useSample(s.text)"
+              > {{ s.text }} <span
+                  class="measureNumber"> ({{ s.measure }})</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +159,23 @@
           ></LineGraph>
         </div>
       </div>
+      <!--      <div style="overflow-x: auto;">-->
+      <!--        <div style="margin-top: 10px; ">-->
+      <!--          <div class="subheading">Summary Statistics</div>-->
+      <!--          <div style="display: flex; flex-direction: row; flex-wrap: nowrap;">-->
+      <!--            <div v-for="dm in availableDiffModes" style="display: flex; flex-direction: column; align-items: center;">-->
+      <!--              <MiniHisto-->
+      <!--                  :height="100"-->
+      <!--                  :width="120"-->
+      <!--                  :data-points="tokenList.map(tk => tk.value)"-->
+      <!--              ></MiniHisto>-->
+      <!--              <div>{{ dm.name }}</div>-->
+      <!--            </div>-->
+      <!--          </div>-->
+
+      <!--        </div>-->
+
+      <!--      </div>-->
       <div style="margin-top: 10px;">
         <div class="subheading">Measure mapped to each token</div>
         <div style="display: inline-block">
@@ -178,6 +212,21 @@
                              v-else
         ></MultiSelectTooltips>
       </div>
+      <div style="margin-top: 20px" v-if="currentDiffMode.indexOf('diff')>-1">
+        <div class="subheading">Token Statistics for
+          {{ currentDiffModeObject.name }}
+        </div>
+        <!--        <pre>{{ currentDiffModeObject }}</pre>-->
+        <!--        <div v-if="currentDiffMode.indexOf('rank')>-1"> RNK</div>-->
+        <MiniHisto
+            :height="150"
+            :width="250"
+            :data-points="tokenList.map(tk => tk.value)"
+            :color-scheme="(currentDiffMode.indexOf('rank')>-1)?rankDiffColors:probDiffColors"
+        ></MiniHisto>
+
+
+      </div>
 
     </div>
 
@@ -210,10 +259,18 @@ import {caretDown, caretUp, questionMark} from "./etc/symbols";
 import tippy from 'tippy.js'
 import 'tippy.js/dist/tippy.css';
 import {onMounted} from "vue"
+import MiniHisto from "./components/MiniHisto.vue";
+import {probDiffColors, rankDiffColors} from "./etc/colors";
 
 export default defineComponent({
   name: 'App',
-  components: {MultiSelectTooltips, InteractiveTokens, LineGraph, NavBar},
+  components: {
+    MultiSelectTooltips,
+    InteractiveTokens,
+    LineGraph,
+    NavBar,
+    MiniHisto
+  },
   setup() {
 
     const states = reactive({
@@ -236,16 +293,22 @@ export default defineComponent({
     const tokenization = ref(available_tokenizations.gpt)
     let currentResult = null as AnalyzeTextResponse;
 
-    const availableDiffModes: { key: string, name: string, description:string }[] =
+    const availableDiffModes: { key: string, name: string, description: string }[] =
         sortBy(Object.entries(diffModes)
-            .map(([key, v]) => ({key, name: v.name, description: v.description})), ['key'])
+            .map(([key, v]) => ({
+              key,
+              name: v.name,
+              description: v.description
+            })), ['key'])
     const currentDiffMode = ref('rank_diff_clamped')
+    const currentDiffModeObject = ref(diffModes[currentDiffMode.value])
 
     const datasets = ref([] as string[])
     const currentDataset = ref('')
 
 
     const currentMetric = ref("avg_clamped_rank_diff")
+    const currentMetricObject = ref({})
 
     const tokenList = ref([] as TokenInfo[])
 
@@ -355,6 +418,7 @@ export default defineComponent({
     }
 
     watch(currentDiffMode, () => {
+      currentDiffModeObject.value = diffModes[currentDiffMode.value];
       updateTokenVis()
     })
 
@@ -364,6 +428,7 @@ export default defineComponent({
       const m2 = selectedM2.value;
       const dataset = currentDataset.value;
       const metric = currentMetric.value;
+      currentMetricObject.value = availableMetrics.filter(m => m.k === metric)[0]
       api.findSamples(m1, m2, dataset, metric).then(res => {
         console.log(res, "--- res");
         console.log(res.result[0].diff, "--- res.result[0].diff");
@@ -418,11 +483,13 @@ export default defineComponent({
       states,
       availableDiffModes,
       currentDiffMode,
+      currentDiffModeObject,
       tokenList,
       datasets,
       currentDataset,
       availableMetrics,
       currentMetric,
+      currentMetricObject,
       searchForSamples,
       sampleTexts,
       useSample,
@@ -432,7 +499,9 @@ export default defineComponent({
       showMiniTT,
       questionMark,
       caretUp,
-      caretDown
+      caretDown,
+      rankDiffColors,
+      probDiffColors
     }
 
   }
