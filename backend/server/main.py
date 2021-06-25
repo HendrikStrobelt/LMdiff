@@ -93,7 +93,7 @@ def get_config() -> ServerConfig:
     )
 
 
-@lru_cache
+@lru_cache(maxsize=4)
 def get_pipeline(name: str):
     return AutoLMPipeline.from_pretrained(name)
 
