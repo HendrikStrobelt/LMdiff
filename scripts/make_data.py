@@ -25,17 +25,56 @@ MAX_CLAMP_RANK = args.max_clamp_rank
 # `(model, type, dataset)` where `dataset` is the name of the `.txt` file in pf.DATASETS
 CONFIG = [
     ('gpt2', 'gpt', 'mrpc_1+2.txt'),
+    ('gpt2', 'gpt', 'commonsense-qa.txt'),
+    ('gpt2', 'gpt', 'wino-bias.txt'),
+    ('gpt2', 'gpt', 'wino-bias-with-addendum.txt'),
+    ('gpt2', 'gpt', 'gpt2-gen-discrete.txt'),
     ('distilgpt2', 'gpt', 'mrpc_1+2.txt'),
+    ('distilgpt2', 'gpt', 'commonsense-qa.txt'),
+    ('distilgpt2', 'gpt', 'wino-bias.txt'),
+    ('distilgpt2', 'gpt', 'wino-bias-with-addendum.txt'),
+    ('distilgpt2', 'gpt', 'gpt2-gen-discrete.txt'),
     ('lysandre/arxiv', 'gpt', 'mrpc_1+2.txt'),
+    ('lysandre/arxiv', 'gpt', 'commonsense-qa.txt'),
     ('lysandre/arxiv-nlp', 'gpt', 'mrpc_1+2.txt'),
+    ('lysandre/arxiv-nlp', 'gpt', 'commonsense-qa.txt'),
     ('bert-base-cased', 'bert-cased', 'mrpc_1+2.txt'),
+    ('bert-base-cased', 'bert-cased', 'commonsense-qa.txt'),
+    ('bert-base-cased', 'bert-cased', 'wino-bias.txt'),
+    ('bert-base-cased', 'bert-cased', 'wino-bias-with-addendum.txt'),
+    ('bert-base-cased', 'bert-cased', 'short-jokes-small.txt'),
     ('distilbert-base-cased', 'bert-cased', 'mrpc_1+2.txt'),
+    ('distilbert-base-cased', 'bert-cased', 'commonsense-qa.txt'),
+    ('distilbert-base-cased', 'bert-cased', 'wino-bias.txt'),
+    ('distilbert-base-cased', 'bert-cased', 'wino-bias-with-addendum.txt'),
+    ('distilbert-base-cased', 'bert-cased', 'short-jokes-small.txt'),
     ('bert-base-uncased', 'bert-uncased', 'mrpc_1+2.txt'),
+    ('bert-base-uncased', 'bert-uncased', 'commonsense-qa.txt'),
+    ('bert-base-uncased', 'bert-uncased', 'wino-bias.txt'),
+    ('bert-base-uncased', 'bert-uncased', 'wino-bias-with-addendum.txt'),
     ('distilbert-base-uncased', 'bert-uncased', 'mrpc_1+2.txt'),
+    ('distilbert-base-uncased', 'bert-uncased', 'commonsense-qa.txt'),
+    ('distilbert-base-uncased', 'bert-uncased', 'wino-bias.txt'),
+    ('distilbert-base-uncased', 'bert-uncased', 'wino-bias-with-addendum.txt'),
     ('distilbert-base-uncased-finetuned-sst-2-english', 'bert-uncased', 'mrpc_1+2.txt'),
+    ('distilbert-base-uncased-finetuned-sst-2-english', 'bert-uncased', 'commonsense-qa.txt'),
+    ('distilbert-base-uncased-finetuned-sst-2-english', 'bert-uncased', 'wino-bias.txt'),
+    ('distilbert-base-uncased-finetuned-sst-2-english', 'bert-uncased', 'wino-bias-with-addendum.txt'),
+    # ('lysandre/arxiv-nlp', 'gpt', 'gpt2-gen-continuous.txt'),
+    # ('lysandre/arxiv-nlp', 'gpt', 'gpt2-gen-discrete.txt'),
+    # ('distilgpt2', 'gpt', 'short-jokes.txt'),
+    # ('distilgpt2', 'gpt', 'gpt2-gen-continuous.txt'),
+    # ('lysandre/arxiv', 'gpt', 'gpt2-gen-continuous.txt'),
+    # ('lysandre/arxiv', 'gpt', 'gpt2-gen-discrete.txt'),
+    # ('distilbert-base-uncased', 'bert-uncased', 'short-jokes.txt'),
+    # ('bert-base-uncased', 'bert-uncased', 'short-jokes.txt'),
+    # ('distilbert-base-uncased-finetuned-sst-2-english', 'bert-uncased', 'short-jokes.txt'),
+    # ('gpt2', 'gpt', 'short-jokes.txt'),
+    # ('gpt2', 'gpt', 'gpt2-gen-continuous.txt'),
 ]
 
 # ==== CREATE HDF5 FILES ====
+bad_combos = []
 arg_pairs = [(m, ds) for m, _, ds in CONFIG]
 def pooled_analysis(arg_pair):
     m, ds = arg_pair
@@ -52,6 +91,10 @@ def pooled_analysis(arg_pair):
     except FileExistsError as e:
         typer.echo(f"File for ({m}, {ds}) already exists. Skipping.")
         outfname = e.details['outfname']
+    except Exception as e:
+        typer.echo(f"Unexpected issue for ({m}, {ds}) below:\n---\n{e}\n---\n")
+        bad_combos.append(f"({m}, {ds})")
+        outfname = None
 
     return outfname
 
@@ -61,7 +104,7 @@ with mp.Pool(args.nworkers) as p:
 # ==== COMPARE MODELS ====
 config_with_fnames = [c + (o,) for c, o in zip(CONFIG, outfnames)]
 
-def make_comparison_args(conf: List[Tuple[str, str, str, Union[str, Path]]]):
+def make_comparison_args(conf: List[Tuple[str, str, str, Union[str, Path, None]]]):
     """
     Convert config (model, type, dataset_name, dataset_path) into (ds1, ds2) arguments that can be directly passed to the comparison scripts.
 
@@ -72,7 +115,8 @@ def make_comparison_args(conf: List[Tuple[str, str, str, Union[str, Path]]]):
     for model, typ, dataset, ds_path in conf:
         dataset_collection = config_dict.get(dataset, {})
         path_list = dataset_collection.get(typ, [])
-        path_list.append(ds_path)
+        if ds_path is not None:
+            path_list.append(ds_path)
         dataset_collection[typ] = path_list
         config_dict[dataset] = dataset_collection
 
@@ -91,6 +135,7 @@ def make_comparison_args(conf: List[Tuple[str, str, str, Union[str, Path]]]):
 compare_arg_list = make_comparison_args(config_with_fnames)
 print(compare_arg_list)
 
+bad_comparisons = []
 def pooled_comparison(compare_args):
     x = {
         "ds1": compare_args[0],
@@ -98,9 +143,21 @@ def pooled_comparison(compare_args):
         "max_clamp_rank": args.max_clamp_rank
     }
 
-    return compare_models_on_dataset(**x)
+    try:
+        return compare_models_on_dataset(**x)
+    except Exception as e:
+        print(f"Uh oh on {x['ds1']} and {x['ds2']}.\n---\n{e}\n---\n")
+        bad_comparisons.append(x)
+        return None
+        
 
-with mp.Pool(args.nworkers) as p:
-    compare_outfnames = p.map(pooled_comparison, compare_arg_list)
+# with mp.Pool(args.nworkers) as p:
+#     compare_outfnames = p.map(pooled_comparison, compare_arg_list)
+
+compare_outfnames = [pooled_comparison(a) for a in compare_arg_list]
 
 typer.echo("DONE")
+bad_combo_strs = '\n'.join(bad_combos)
+typer.echo(f"Ran into issues for the following analyses:\n---\n {bad_combo_strs}")
+
+typer.echo(f"Ran into issues for the following comparisons:\n---\n {bad_comparisons}")
