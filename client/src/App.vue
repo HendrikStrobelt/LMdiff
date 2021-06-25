@@ -113,12 +113,19 @@
 
             <div
                 v-if="currentMetricObject.t !=='topk'">
-              <MiniHisto
-                  :data-points="sampleTexts.map(s=>s.measure)"
+              <MidiHistogram
+                  :values="searchHistogram.values"
+                  :bin-edges="searchHistogram.bin_edges"
                   :color-scheme="currentMetricObject.t==='rank'?rankDiffColors:probDiffColors"
                   :height="150"
-                  :width="150"
-              ></MiniHisto>
+                  :width="300"
+              ></MidiHistogram>
+              <!--              <MiniHisto-->
+              <!--                  :data-points="sampleTexts.map(s=>s.measure)"-->
+              <!--                  :color-scheme="currentMetricObject.t==='rank'?rankDiffColors:probDiffColors"-->
+              <!--                  :height="150"-->
+              <!--                  :width="150"-->
+              <!--              ></MiniHisto>-->
             </div>
 
             <div
@@ -261,10 +268,12 @@ import 'tippy.js/dist/tippy.css';
 import {onMounted} from "vue"
 import MiniHisto from "./components/MiniHisto.vue";
 import {probDiffColors, rankDiffColors} from "./etc/colors";
+import MidiHistogram from "./components/MidiHistogram.vue";
 
 export default defineComponent({
   name: 'App',
   components: {
+    MidiHistogram,
     MultiSelectTooltips,
     InteractiveTokens,
     LineGraph,
@@ -380,15 +389,11 @@ export default defineComponent({
         probValues.value = [r.m1.prob, r.m2.prob]
         rankValues.value = [r.m1.rank, r.m2.rank]
 
-
-        console.log(resp.result, "--- resp.result");
-
       })
     }
 
     const updateTokenVis = async () => {
       const r = currentResult.result;
-      // console.log(r,"--- r");
       const modelTokenInfo = (index, modelID = 'm1'): ModelTokenInfo => {
         return {
           prob: r[modelID].prob[index],
@@ -422,6 +427,8 @@ export default defineComponent({
       updateTokenVis()
     })
 
+
+    const searchHistogram = ref({values: [], bin_edges: []})
     const searchForSamples = () => {
       states.searchRequestSent = true;
       const m1 = selectedM1.value;
@@ -430,9 +437,8 @@ export default defineComponent({
       const metric = currentMetric.value;
       currentMetricObject.value = availableMetrics.filter(m => m.k === metric)[0]
       api.findSamples(m1, m2, dataset, metric).then(res => {
-        console.log(res, "--- res");
-        console.log(res.result[0].diff, "--- res.result[0].diff");
         states.searchRequestSent = false;
+        searchHistogram.value = res.histogram;
         sampleTexts.value = res.result.map(s => ({
           text: s.text,
           measure: s.metrics[metric]
@@ -458,15 +464,16 @@ export default defineComponent({
       //
     })
 
-    let tippyStarted = false;
+    let tippies = [];
     onUpdated(() => {
-      if (!tippyStarted) {
-        const t = tippy('[data-tippy-content]', {
-          trigger: 'mouseenter click',
-        });
-        console.log(t, "--- t");
-        // tippyStarted = true;
-      }
+      // if (!tippyStarted) {
+      tippies.forEach(t => t.destroy())
+      tippies = tippy('[data-tippy-content]', {
+        trigger: 'mouseenter click',
+      });
+
+      // tippyStarted = true;
+      // }
     })
 
     return {
@@ -491,6 +498,7 @@ export default defineComponent({
       currentMetric,
       currentMetricObject,
       searchForSamples,
+      searchHistogram,
       sampleTexts,
       useSample,
       tokenization,

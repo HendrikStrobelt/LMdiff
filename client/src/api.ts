@@ -103,7 +103,11 @@ export interface Sample {
 
 export interface FindSampleResponse {
   request: any,
-  result: Sample[]
+  result: Sample[],
+  histogram: {
+    values: number[],
+    bin_edges: number[]
+  }
 }
 
 export interface AnalyzeTextResponse {
@@ -113,7 +117,7 @@ export interface AnalyzeTextResponse {
     m1: PerModelInfo,
     m2: PerModelInfo,
     diff: { rank: number[], prob: number[], rank_clamp: number[] }
-  }
+  },
 }
 
 export interface SpecificAttentionsResponse {
@@ -166,7 +170,7 @@ export class API {
   public findSamples(m1: string, m2: string, dataset: string, metric: string,
                      order = 'descending', k = 50): Promise<FindSampleResponse> {
     const payload = {
-      m1, m2, dataset, metric, order, k
+      m1, m2, dataset, metric, order, k, histogram_bins:30
     }
 
     return d3.json(makeUrl(this.baseURL + '/new-suggestions', payload))

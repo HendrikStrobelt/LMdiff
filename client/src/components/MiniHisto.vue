@@ -135,8 +135,7 @@ export default defineComponent({
         label: `${cl.label} [${cl.l}]`,
         color: cl.color
       } as BarRender))
-      console.log(xAxis.value, "--- xAxis.value");
-      // select(xAxis.value).call(axisBottom(xScale));
+
       xLabels.value = cl.map((c, i) => ({
         x: xScale(i + .5),
         y: (i%2) * 10,
