@@ -1,17 +1,25 @@
 <template>
   <svg :width="size.width" :height="size.height" class="MidiHistogram"
        ref="myself">
-    <g class="xAxis axis" ref="xAxis"
-       :transform="`translate(${margin.l}, ${size.height-margin.b})`">
-    </g>
+
     <g class="yAxis axis" ref="yAxis"
        :transform="`translate(${margin.l}, ${margin.t})`"></g>
     <g :transform="`translate(${margin.l}, ${margin.t})`">
-      <rect v-for="bar in bars" class="bar"
+      <rect v-for="(bar,i) in bars" class="highlighter"
+            :x="bar.x" :y="0" :width="bar.w" :height="size.height-margin.t"
+            :data-tippy-content="bar.label"
+            @mouseover="highlightIndex=i"
+            @mouseout="highlightIndex=-1"
+      ></rect>
+      <rect v-for="(bar,i) in bars" class="bar"
+            :class="{highlighted: i===highlightIndex}"
             :x="bar.x" :y="bar.y" :width="bar.w" :height="bar.h"
             :style="{fill:bar.color?bar.color:null}"
-            :data-tippy-content="bar.label"
       ></rect>
+
+    </g>
+    <g class="xAxis axis" ref="xAxis"
+       :transform="`translate(${margin.l}, ${size.height-margin.b+3})`">
     </g>
   </svg>
 </template>
@@ -28,7 +36,7 @@ import {
 import {PropType} from "@vue/runtime-core";
 import {probDiffColors} from "../etc/colors";
 import {axisBottom, axisLeft, extent, scaleLinear, select} from "d3";
-import tippy from "tippy.js"
+import tippy, {followCursor} from "tippy.js"
 
 interface BarRender {
   x: number,
@@ -80,6 +88,7 @@ export default defineComponent({
     const xAxis = ref(null as SVGGElement);
     const yAxis = ref(null as SVGGElement);
     const myself = ref(null as SVGViewElement)
+    const highlightIndex = ref(-1);
 
 
     const updateVis = () => {
@@ -128,11 +137,19 @@ export default defineComponent({
     onUpdated(() => {
       tippies.forEach(t => t.destroy())
       const n = select(myself.value).selectAll('[data-tippy-content]').nodes()
-      tippies = tippy(n as Element[])
+      tippies = tippy(n as Element[],
+          {
+            trigger: 'mouseenter',
+            // followCursor:true, plugins: [followCursor],
+          }
+      )
     })
 
+    watchEffect(()=>{
+      console.log(highlightIndex.value,"--- highlightIndex.value");
+    })
 
-    return {size, margin, xAxis, yAxis, bars, myself}
+    return {size, margin, xAxis, yAxis, bars, myself, highlightIndex}
   }
 })
 </script>
@@ -142,5 +159,22 @@ export default defineComponent({
   font-size: 9pt;
   font-weight: inherit;
   color: #666;
+}
+
+.bar {
+  pointer-events: none;
+}
+
+.bar.highlighted{
+  stroke: #333333;
+  stroke-width: 1;
+}
+
+.highlighter {
+  fill: transparent;
+}
+
+.highlighter:hover {
+  fill: #eee;
 }
 </style>
