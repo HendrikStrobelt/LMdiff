@@ -14,7 +14,8 @@ def analyze_dataset(
     model_name:Union[Path,str],
     force_overwrite: bool,
     topk: int,
-    first_n: Optional[int] = None):
+    first_n: Optional[int] = None,
+    output_attentions=False):
     """Analyze a dataset with a huggingface model
 
     Raises:
@@ -57,7 +58,7 @@ def analyze_dataset(
     content = tds.content if first_n is None else tds.content[:first_n]
     for i, ex in tqdm(enumerate(content), total=len(content)):
         grp = h5f.create_group(H5AnalysisResultDataset.tokey(i))
-        out = pipeline.forward(ex)
+        out = pipeline.forward(ex, output_attentions=output_attentions)
         out = collect_analysis_info(out, k=topk)
         out.save_to_h5group(grp)
 

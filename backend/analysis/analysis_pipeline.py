@@ -117,7 +117,7 @@ class AutoLMPipeline:
         else:
             raise NotImplementedError(f"Model type is not autoregressive or maskable.")
 
-    def forward(self, s) -> AnalysisLMPipelineForwardOutput:
+    def forward(self, s, output_attentions=False) -> AnalysisLMPipelineForwardOutput:
         with torch.no_grad():
 
             if self.is_auto_regressive:
@@ -126,7 +126,7 @@ class AutoLMPipeline:
             else:
                 tids = self.for_model(s)
 
-            output = self.model(tids, output_attentions=True)
+            output = self.model(tids, output_attentions=output_attentions)
 
             if self.is_auto_regressive:
                 output.logits = output.logits.squeeze()
@@ -135,28 +135,35 @@ class AutoLMPipeline:
                 tids = tids[1:]
 
                 # SWAP THE COMMENTS ON THE BELOW 2 LINES IF WE PREFER THE OTHER FUNCTIONALITY
-                output.attentions = torch.cat(
-                    [a[:, :, 1:, 1:] for a in output.attentions], dim=0
-                )
+                if output_attentions:
+                    output.attentions = torch.cat(
+                        [a[:, :, 1:, 1:] for a in output.attentions], dim=0
+                    )
+                else:
+                    output.attentions = None
                 # output.attentions = [a[:,:,:-1, :-1] for a in output.attentions]
 
             elif self.is_maskable:
 
                 output.logits = reduce_logits(output.logits)
                 tids = tids[0]  # Where everything is unmasked
-                output.attentions = torch.cat(
-                    [
-                        reduce_attentions(a, i).unsqueeze(0)
-                        for i, a in enumerate(output.attentions)
-                    ],
-                    dim=0,
-                )
+                
+                if output_attentions:
+                    output.attentions = torch.cat(
+                        [
+                            reduce_attentions(a, i).unsqueeze(0)
+                            for i, a in enumerate(output.attentions)
+                        ],
+                        dim=0,
+                    )
+                else:
+                    output.attentions = None
 
                 # Remove CLS and SEP
-                if True:
-                    output.logits = output.logits[1:-1]
+                output.logits = output.logits[1:-1]
+                if output_attentions: 
                     output.attentions = output.attentions[:, :, 1:-1, 1:-1]
-                    tids = tids[1:-1]
+                tids = tids[1:-1]
             else:
                 raise ValueError(
                     "Unhandled model type. Model type is not autoregressive or maskable"
@@ -193,7 +200,7 @@ def collect_analysis_info(
     phrase_probs = probs[torch.arange(model_output.N), model_output.token_ids]
     #     topk_logit_values, topk_logit_inds = torch.topk(output.logits, k=k, dim=1)
     topk_prob_values, topk_prob_inds = torch.topk(probs, k=k, dim=1)
-    attention = model_output.attentions  # Layer, Head, N, N
+    attention = model_output.attentions  # Layer, Head, N, N (or None)
 
     return LMAnalysisOutput(
         phrase=model_output.phrase,
@@ -241,7 +248,6 @@ def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
                 pp1.idmat2tokens(parsed_output1.topk_token_ids),
                 parsed_output1.topk_prob_values,
             ),  # Turn to str
-            # "attentions": parsed_output1.attention
         },
         "m2": {
             "rank": parsed_output2.ranks,
@@ -250,7 +256,6 @@ def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
                 pp2.idmat2tokens(parsed_output2.topk_token_ids),
                 parsed_output2.topk_prob_values,
             ),  # Turn to str
-            # "attentions": parsed_output2.attention
         },
         "diff": {
             "rank": parsed_output2.ranks - parsed_output1.ranks,

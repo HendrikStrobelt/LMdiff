@@ -12,20 +12,24 @@ class LMAnalysisOutputH5:
     probs: np.array  # N,
     topk_prob_values: np.array  # k, N
     topk_token_ids: np.array  # k, N
-    attention: np.array  # Layer, Head, N, N
     phrase: str
+    attention: Optional[np.array]=None  # Layer, Head, N, N
 
     # Add attributes
 
     @classmethod
     def from_group(cls, grp):
+        try:
+            attention = np.array(grp["attention"])
+        except KeyError as e:
+            attention = None
         return cls(
             token_ids=np.array(grp["token_ids"]),
             ranks=np.array(grp["ranks"]),
             probs=np.array(grp["probs"]),
             topk_prob_values=np.array(grp["topk_probs"]),
             topk_token_ids=np.array(grp["topk_token_ids"]),
-            attention=np.array(grp["attention"]),
+            attention=attention,
             phrase=grp.attrs["phrase"],
         )
 
@@ -35,29 +39,35 @@ class LMAnalysisOutputH5:
         h5group.create_dataset("probs", data=self.probs)
         h5group.create_dataset("topk_probs", data=self.topk_prob_values)
         h5group.create_dataset("topk_token_ids", data=self.topk_token_ids)
-        h5group.create_dataset("attention", data=self.attention)
         h5group.attrs["phrase"] = self.phrase
+
+        if self.attention is not None:
+            h5group.create_dataset("attention", data=self.attention)
 
 
 @dataclass
 class LMAnalysisOutput:
-    token_ids: torch.tensor  # N,
-    ranks: torch.tensor  # N,
-    probs: torch.tensor  # N,
-    topk_prob_values: torch.tensor  # k, N
-    topk_token_ids: torch.tensor  # k, N
-    attention: torch.tensor  # Layer, Head, N, N
+    token_ids: torch.tensor  # (N,)
+    ranks: torch.tensor  # (N,)
+    probs: torch.tensor  # (N,)
+    topk_prob_values: torch.tensor  # (k, N)
+    topk_token_ids: torch.tensor  # (k, N)
     phrase: str
+    attention: Optional[torch.tensor]=None  # If provided, of shape (Layer, Head, N, N)
 
     def for_h5(self):
+        if self.attention is None:
+            attention = None
+        else:
+            attention = self.attention.cpu().numpy().astype(np.float32)
         return LMAnalysisOutputH5(
             token_ids=self.token_ids.cpu().numpy().astype(np.int64),
             ranks=self.ranks.cpu().numpy().astype(np.uint32),
             probs=self.probs.cpu().numpy().astype(np.float32),
             topk_prob_values=self.topk_prob_values.cpu().numpy().astype(np.float32),
             topk_token_ids=self.topk_token_ids.cpu().numpy().astype(np.int64),
-            attention=self.attention.cpu().numpy().astype(np.float32),
             phrase=self.phrase,
+            attention=attention,
         )
 
     def save_to_h5group(self, h5group: h5py.Group):

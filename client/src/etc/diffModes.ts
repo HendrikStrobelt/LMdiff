@@ -12,7 +12,7 @@ export const standard_scale = scalePow<number, string>().exponent(.3).domain([-1
 
 const val_standard_scale = scaleLinear();
 
-const uni_scale = scalePow<number,string>().exponent(.3).domain([0, 1])
+const uni_scale = scalePow<number, string>().exponent(.3).domain([0, 1])
   //@ts-ignore
   .range(['#f7f7f7', '#808080']);
 
@@ -60,7 +60,8 @@ const diff_Dimensions: {
       name: string,
       reverse?: boolean,
       diff?: string[],
-      access:string
+      access: string,
+      description: string
     }
 } = {
   diff: {
@@ -68,29 +69,33 @@ const diff_Dimensions: {
     colorScale: standard_scale,
     valueScale: val_standard_scale,
     name: "Probability Diff",
+    description: 'Difference of predicted probabilities: prob(M2) - prob(M1)',
     diff: [standard_scale(-.5), standard_scale(0.5)],
-    access:"diff.prob"
+    access: "diff.prob"
   },
   prob_m1: {
     discrete: false,
     colorScale: uni_scale,
     valueScale: val_uni_scale,
     name: "Probability M1",
-    access:'m1.prob'
+    description: 'Predicted probabilities under model M1',
+    access: 'm1.prob'
   },
   prob_m2: {
     discrete: false,
     colorScale: uni_scale,
     valueScale: val_uni_scale,
     name: "Probability M2",
-    access:'m2.prob'
+    description: 'Predicted probabilities under model M2',
+    access: 'm2.prob'
   },
   rank_m1: {
     discrete: true,
     colorScale: thScale,
     valueScale: val_thScale,
     name: "Rank M1",
-    access:'m1.rank'
+    description: 'Predicted rank under model M1',
+    access: 'm1.rank'
 
   },
   rank_m2: {
@@ -98,7 +103,8 @@ const diff_Dimensions: {
     colorScale: thScale,
     valueScale: val_thScale,
     name: "Rank M2",
-    access:'m2.rank'
+    description: 'Predicted rank under model M2',
+    access: 'm2.rank'
   },
   rank_diff: {
     discrete: true,
@@ -106,7 +112,8 @@ const diff_Dimensions: {
     colorScale: rankDiffScale,
     valueScale: val_rankDiffScale,
     name: "Rank Diff",
-    access:'diff.rank'
+    description: 'Difference of predicted rank: rank(M2) - rank(M1)',
+    access: 'diff.rank'
   },
   rank_diff_clamped: {
     discrete: true,
@@ -114,7 +121,8 @@ const diff_Dimensions: {
     colorScale: rankDiffScaleClamped,
     valueScale: val_rankDiffScaleClamped,
     name: "Clamped Rank Diff",
-    access:'diff.rank_clamp'
+    description: 'Difference of predicted rank clamped to 50: min(rank(M2),50) - min(rank(M1),50)',
+    access: 'diff.rank_clamp'
   },
 }
 
