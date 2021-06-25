@@ -269,6 +269,7 @@ def new_suggestions(
     order: SortOrder = "descending",
     k: int = 50,
     sort_by_abs: bool = True,
+    histogram_bins:int = 100,
 ):
     f"""Get the comparison between model m1 and m2 on the dataset. Rank the output according to a valid metric
 
@@ -280,6 +281,7 @@ def new_suggestions(
         order (SortOrder, optional): If "ascending", sort in order of least to greatest. Defaults to "descending".
         k (int, optional): The number of interesting instances to return. Defaults to 50.
         sort_by_abs (bool): Sort by the absolute value. Defaults to True
+        histogram_bins (int): Number of bins in the returned histogram of all values. Defaults to 100.
 
     Returns:
         Object containing information to statically analyze two models.
@@ -289,9 +291,9 @@ def new_suggestions(
     ds1 = get_analysis_results(dataset, m1)
     ds2 = get_analysis_results(dataset, m2)
     compared_results = get_comparison_results(m1, m2, dataset)
+    results = np.array(compared_results[metric])
 
     if sort_by_abs:
-        results = np.array(compared_results[metric])
         results_sign = np.sign(results)
         results_abs = np.abs(results)
 
@@ -341,6 +343,8 @@ def new_suggestions(
         ]
     ]
 
+    histogram_values, bin_edges = np.histogram(results, bins=histogram_bins)
+
     return {
         "request": {
             "m1": m1,
@@ -351,6 +355,10 @@ def new_suggestions(
             "k": k,
         },
         "result": result,
+        "histogram": deepdict_to_json({
+            "values": histogram_values,
+            "bin_edges": bin_edges
+        }, ndigits=4)
     }
 
 
