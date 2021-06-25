@@ -119,6 +119,7 @@
                   :color-scheme="currentMetricObject.t==='rank'?rankDiffColors:probDiffColors"
                   :height="150"
                   :width="300"
+                  :used-values="sampleTexts.map(s=>s.measure)"
               ></MidiHistogram>
               <!--              <MiniHisto-->
               <!--                  :data-points="sampleTexts.map(s=>s.measure)"-->

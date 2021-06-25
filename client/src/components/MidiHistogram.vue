@@ -18,6 +18,20 @@
       ></rect>
 
     </g>
+    <g :transform="`translate(${margin.l}, ${margin.t})`"
+       class="sample"
+    >
+      <line v-for="l in samples"
+            :x1="l"
+            :x2="l"
+            :y1="(size.height-margin.t-margin.b)/2-10"
+            :y2="(size.height-margin.t-margin.b)/2+10"
+      >
+<!--            :y2="size.height-margin.t"-->
+
+      </line>
+
+    </g>
     <g class="xAxis axis" ref="xAxis"
        :transform="`translate(${margin.l}, ${size.height-margin.b+3})`">
     </g>
@@ -70,6 +84,10 @@ export default defineComponent({
     width: {
       type: Number,
       default: 200
+    },
+    usedValues: {
+      type: Array as PropType<number[]>,
+      default: []
     }
   },
   setup(props, ctx) {
@@ -85,6 +103,7 @@ export default defineComponent({
     }
 
     const bars = ref([] as BarRender[]);
+    const samples = ref([] as number[])
     const xAxis = ref(null as SVGGElement);
     const yAxis = ref(null as SVGGElement);
     const myself = ref(null as SVGViewElement)
@@ -113,6 +132,8 @@ export default defineComponent({
           .call(axisBottom(zeroScale).ticks(3))
       select(yAxis.value)
           .call(axisLeft(yScale))
+
+      samples.value = props.usedValues.map(d => zeroScale(d))
 
       bars.value = props.values.map((value, i) => ({
         x: xScale(i),
@@ -145,11 +166,11 @@ export default defineComponent({
       )
     })
 
-    watchEffect(()=>{
-      console.log(highlightIndex.value,"--- highlightIndex.value");
+    watchEffect(() => {
+      console.log(highlightIndex.value, "--- highlightIndex.value");
     })
 
-    return {size, margin, xAxis, yAxis, bars, myself, highlightIndex}
+    return {size, margin, xAxis, yAxis, bars, myself, highlightIndex, samples}
   }
 })
 </script>
@@ -161,11 +182,16 @@ export default defineComponent({
   color: #666;
 }
 
-.bar {
+.bar, .sample {
   pointer-events: none;
 }
 
-.bar.highlighted{
+.sample{
+  stroke-width: 1;
+  stroke: #aaaaaa66;
+}
+
+.bar.highlighted {
   stroke: #333333;
   stroke-width: 1;
 }
