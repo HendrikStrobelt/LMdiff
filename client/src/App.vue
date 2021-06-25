@@ -112,7 +112,9 @@
               style="display: flex; flex-wrap: nowrap; flex-direction: row;align-items: flex-end;">
 
             <div
-                v-if="currentMetricObject.t !=='topk'">
+                v-if="currentMetricObject.t !=='topk'"
+                style="padding-right: 10px;"
+            >
               <MidiHistogram
                   :values="searchHistogram.values"
                   :bin-edges="searchHistogram.bin_edges"
@@ -134,6 +136,11 @@
               <div class="sampleText"
                    v-for="s in sampleTexts" :key="(s,i)=> s.text+i"
                    @click="useSample(s.text)"
+                   :style="{
+                     borderLeftColor:(currentMetricObject.t==='rank'?
+                     rankDiffColors[Math.sign(s.measure)+1]:
+                     (currentMetricObject.t==='prob'?probDiffColors[Math.sign(s.measure)+1]:''))
+                   }"
               > {{ s.text }} <span
                   class="measureNumber"> ({{ s.measure }})</span></div>
             </div>
