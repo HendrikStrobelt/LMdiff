@@ -223,13 +223,12 @@ def get_all_models():
         {"model": "gpt2", "type": "🍀", "token": "gpt"},
         {"model": "distilgpt2", "type": "🍀", "token": "gpt"},
         {"model": "lysandre/arxiv-nlp", "type": "🍀", "token": "gpt"},
+        {"model": "lysandre/arxiv", "type": "🍀", "token": "gpt"},
         {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
         {"model": "bert-base-cased", "type": "🌺", "token": "bert"},
         {"model": "distilbert-base-cased", "type": "🌺", "token": "bert"},
-
-        # {"model": "lysandre/arxiv", "type": "gpt", "token": "gpt"},
     ]
 
     return res
