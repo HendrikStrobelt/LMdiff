@@ -227,8 +227,8 @@ def get_all_models():
         {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
-        {"model": "bert-base-cased", "type": "🌺", "token": "bert"},
-        {"model": "distilbert-base-cased", "type": "🌺", "token": "bert"},
+        {"model": "nlptown/bert-base-multilingual-uncased-sentiment", "type": "🌺", "token": "bert"},
+        {"model": "bert-base-multilingual-uncased", "type": "🌺", "token": "bert"},
     ]
 
     return res
