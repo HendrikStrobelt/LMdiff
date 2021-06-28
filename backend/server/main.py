@@ -107,9 +107,10 @@ def get_pipeline(name: str):
         "bert-base-uncased",
     ])
     if name in needs_gpu:
-        gpu_device = int(get_args().gpu_device)
+        device = get_args().gpu_device
     else:
         device = "cpu"
+    print(f"Sending model to {device}")
     return AutoLMPipeline.from_pretrained(name, device=device)
 
 
