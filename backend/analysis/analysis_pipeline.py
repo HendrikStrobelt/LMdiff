@@ -71,6 +71,7 @@ class AnalysisLMPipelineForwardOutput(CausalLMOutputWithCrossAttentions):
 
 class AutoLMPipeline:
     def __init__(self, model, tokenizer):
+
         self.model: transformers.PreTrainedModel = model
         self.device = self.model.device
         self.tokenizer: transformers.PreTrainedTokenizer = tokenizer
@@ -89,12 +90,15 @@ class AutoLMPipeline:
         assert self.is_auto_regressive or self.is_maskable, "Needs to be a gpt- or bert-like model"
 
     @classmethod
-    def from_pretrained(cls, name_or_path):
+    def from_pretrained(cls, name_or_path, device = None):
         """Create a model and tokenizer from a single name, passing arguemnts to `from_pretrained` of the AutoTokenizer and AutoModel"""
         model = AutoModelWithLMHead.from_pretrained(name_or_path)
         tokenizer = AutoTokenizer.from_pretrained(name_or_path)
-        if torch.cuda.is_available():
-            model = model.to(0)
+        if device is None and torch.cuda.is_available():
+            device = 0
+            model = model.to(device)
+        else:
+            model = model.to(device)
         return cls(model, tokenizer)
 
     def for_model(self, s):

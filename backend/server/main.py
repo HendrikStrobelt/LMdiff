@@ -53,6 +53,12 @@ def get_args():
         default="gpt",
         help="One of {'gpt', 'bert'}. Tells the frontend how to visualize the tokens used by the model.",
     )
+    parser.add_argument(
+        "--gpu-device",
+        type=int,
+        default=0,
+        help="One of {0, 1, ..., n_gpus}. Will use this device as the main device."
+    )
 
     args, _ = parser.parse_known_args()
     return args
@@ -95,7 +101,16 @@ def get_config() -> ServerConfig:
 
 @lru_cache(maxsize=4)
 def get_pipeline(name: str):
-    return AutoLMPipeline.from_pretrained(name)
+    needs_gpu = set([
+        "nlptown/bert-base-multilingual-uncased-sentiment",
+        "bert-base-multilingual-uncased",
+        "bert-base-uncased",
+    ])
+    if name in needs_gpu:
+        gpu_device = int(get_args().gpu_device)
+    else:
+        device = "cpu"
+    return AutoLMPipeline.from_pretrained(name, device=device)
 
 
 @lru_cache
@@ -367,6 +382,8 @@ def analyze_models_on_text(payload: types.AnalyzeRequest):
     m2 = payload.m2
     pp1 = get_pipeline(m1)
     pp2 = get_pipeline(m2)
+    print("pp1.device: ", pp1.device)
+    print("pp2.device: ", pp1.device)
     text = payload.text
     output = analyze_text(text, pp1, pp2)
     result = deepdict_to_json(output, ndigits=4)
