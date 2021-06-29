@@ -245,6 +245,8 @@ def get_all_models():
         {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
         {"model": "nlptown/bert-base-multilingual-uncased-sentiment", "type": "🌺", "token": "bert"},
         {"model": "bert-base-multilingual-uncased", "type": "🌺", "token": "bert"},
+        {"model": "dbmdz/german-gpt2", "type": "💐", "token": "gpt"},
+        {"model": "dbmdz/german-gpt2-faust", "type": "💐", "token": "gpt"},
     ]
 
     return res
@@ -391,33 +393,6 @@ def analyze_models_on_text(payload: types.AnalyzeRequest):
 
     res = {"request": {"m1": m1, "m2": m2, "text": text}, "result": result}
     return res
-
-
-@app.post("/api/analyze")
-def analyze(payload: types.AnalyzeRequest):
-    m1 = payload.m1
-    m2 = payload.m2
-    text = payload.text
-
-    # TODO: hacky cache
-    c_key = str(m1) + str(m2) + text
-    if c_key in lru:
-        return lru[c_key]
-
-    model1, tok1 = model_manager.get_model_and_tokenizer(m1)
-
-    model2, tok2 = None, None
-    if m2:
-        model2, tok2 = model_manager.get_model_and_tokenizer(m2)
-
-    comparer = LMComparer(model1, model2, tok1, tok2)
-    res = comparer.analyze_text(text)
-
-    res = {"request": {"m1": m1, "m2": m2, "text": text}, "result": res}
-    lru[c_key] = res
-
-    return res
-
 
 if __name__ == "__main__":
     # This file is not run as __main__ in the uvicorn environment

@@ -79,7 +79,7 @@ class AutoLMPipeline:
         self.vocab_hash = list2consistent_hash(self.tokenizer.vocab.items())
 
         # Only one should be true below:
-        self.is_auto_regressive = self.model.config.model_type.startswith("gpt")
+        self.is_auto_regressive = "gpt" in self.model.config.model_type
         self.tokenizer.pad_token = (
             self.tokenizer.eos_token
             if self.is_auto_regressive
@@ -126,7 +126,8 @@ class AutoLMPipeline:
 
             if self.is_auto_regressive:
                 # autoregressive ==> add BOE
-                tids = self.for_model(self.tokenizer.bos_token + s)
+                tids = self.for_model(s)
+                # tids = self.for_model(self.tokenizer.bos_token + s)
             else:
                 tids = self.for_model(s)
 
@@ -135,17 +136,20 @@ class AutoLMPipeline:
             if self.is_auto_regressive:
                 output.logits = output.logits.squeeze()
                 tids = tids.squeeze()
-                output.logits = output.logits[:-1]
-                tids = tids[1:]
+                # output.logits = output.logits[:-1]
+                # tids = tids[1:]
+                # tids = tids[1:]
 
                 # SWAP THE COMMENTS ON THE BELOW 2 LINES IF WE PREFER THE OTHER FUNCTIONALITY
                 if output_attentions:
+                    # output.attentions = torch.cat(
+                    #     [a[:, :, 1:, 1:] for a in output.attentions], dim=0
+                    # )
                     output.attentions = torch.cat(
-                        [a[:, :, 1:, 1:] for a in output.attentions], dim=0
+                        [a for a in output.attentions], dim=0
                     )
                 else:
                     output.attentions = None
-                # output.attentions = [a[:,:,:-1, :-1] for a in output.attentions]
 
             elif self.is_maskable:
 
