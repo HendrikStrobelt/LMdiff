@@ -32,7 +32,8 @@ def get_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--model", default="gpt-2-small")
+    parser.add_argument("m1", default=None, nargs="?", type=str, help="Request this as one model in the interface")
+    parser.add_argument("m2", default=None, nargs="?", type=str, help="Request this as another model in the interface")
     parser.add_argument("--address", default="127.0.0.1")  # 0.0.0.0 for nonlocal use
     parser.add_argument(
         "--port", type=int, default=8000, help="Port on which to run the app."
@@ -59,8 +60,26 @@ def get_args():
         default=0,
         help="One of {0, 1, ..., n_gpus}. Will use this device as the main device."
     )
-
     args, _ = parser.parse_known_args()
+
+    # Checking
+    config_provided = args.config is not None
+    both_m_provided = args.m1 is not None and args.m2 is not None
+    zero_m_provided = args.m1 is None and args.m2 is None
+    only_one_m_provided = not both_m_provided and not zero_m_provided
+
+    OneModelError = AssertionError("Please provide two models to compare against")
+    TooMuchInfoError = AssertionError("Please provide EITHER the config directory OR two comparable models")
+
+    if both_m_provided:
+        if config_provided:
+            raise TooMuchInfoError
+    elif config_provided:
+        if both_m_provided or only_one_m_provided:
+            raise TooMuchInfoError
+    elif only_one_m_provided:
+        raise OneModelError
+
     return args
 
 
@@ -69,6 +88,7 @@ class ServerConfig:
     ANALYSIS: Union[Path, str]
     COMPARISONS: Union[Path, str]
     custom_dir: bool = False
+    custom_models: bool = False
     m1: Optional[str] = None  # Only available if 'custom_dir' is true
     m2: Optional[str] = None  # Only available if 'custom_dir' is true
     dataset: Optional[str] = None  # Only available if 'custom_dir' is true
@@ -78,6 +98,15 @@ class ServerConfig:
 def get_config() -> ServerConfig:
     config_dir = get_args().config
     if config_dir is None:
+
+        m1, m2 = get_args().m1, get_args().m2
+        if m1 is not None and m2 is not None:
+            # Return model situation
+            return ServerConfig(
+                ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_models=True, m1=m1, m2=m2
+            )
+        
+        # Return default
         return ServerConfig(
             ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_dir=False
         )
@@ -205,6 +234,9 @@ def get_available_datasets(m1: str, m2: str):
     if get_config().custom_dir:
         return [get_config().dataset]
 
+    elif get_config().custom_models:
+        return [] # No dataset in this case
+
     if m1 == "" or m2 == "":
         return []
 
@@ -219,21 +251,22 @@ def get_available_datasets(m1: str, m2: str):
 
 @app.get("/api/all-models")
 def get_all_models():
-    if get_config().custom_dir:
+    if get_config().custom_dir or get_config().custom_models:
         return [
             {
                 "model": get_config().m1,
-                "type": "custom",
+                "type": "🦄",
                 "token": get_args().tokenization_type,
             },
             {
                 "model": get_config().m2,
-                "type": "custom",
+                "type": "🦄",
                 "token": get_args().tokenization_type,
             },
         ]
 
-# ☘🍀🌼🌻🌺🌹💐🌸
+
+    # ☘🍀🌼🌻🌺🌹💐🌸
 
     res = [
         {"model": "gpt2", "type": "🍀", "token": "gpt"},
@@ -257,8 +290,8 @@ def specific_attention(payload: types.SpecificAttentionRequest):
     pp1 = get_pipeline(payload.m1)
     pp2 = get_pipeline(payload.m2)
 
-    output1 = pp1.forward(payload.text)
-    output2 = pp2.forward(payload.text)
+    output1 = pp1.forward(payload.text, output_attentions=True)
+    output2 = pp2.forward(payload.text, output_attentions=True)
 
     att1 = output1.attentions
     att2 = output2.attentions
