@@ -32,8 +32,8 @@ def get_args():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("m1", default=None, nargs="?", type=str, help="Request this as one model in the interface")
-    parser.add_argument("m2", default=None, nargs="?", type=str, help="Request this as another model in the interface")
+    parser.add_argument("--m1", default=None, type=str, help="Request this as one model in the interface")
+    parser.add_argument("--m2", default=None, type=str, help="Request this as another model in the interface")
     parser.add_argument("--address", default="127.0.0.1")  # 0.0.0.0 for nonlocal use
     parser.add_argument(
         "--port", type=int, default=8000, help="Port on which to run the app."
