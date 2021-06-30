@@ -4,7 +4,7 @@ from .helpers import LMAnalysisOutputH5
 import numpy as np
 from pathlib import Path
 
-class H5AnalysisResultDataset:
+class AnalysisCache:
     @staticmethod
     def tokey(i: int):
         """Convert an integer to index into the correct group"""

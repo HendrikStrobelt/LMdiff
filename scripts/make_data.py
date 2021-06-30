@@ -7,7 +7,7 @@ import multiprocessing as mp
 from pathlib import Path
 from script_helpers.preprocess import preprocess
 from script_helpers.compare_models_on_dataset import compare_models_on_dataset
-from script_helpers.create_modelXdataset import create_analysis_results
+from script_helpers.create_modelXdataset import create_analysis_cache
 
 from tqdm import tqdm
 from itertools import combinations
@@ -87,7 +87,7 @@ def pooled_analysis(arg_pair):
         # "max_clamp_rank": args.max_clamp_rank,
     }
     try:
-        outfname = create_analysis_results(**fargs)
+        outfname = create_analysis_cache(**fargs)
     except FileExistsError as e:
         typer.echo(f"File for ({m}, {ds}) already exists. Skipping.")
         outfname = e.details['outfname']
