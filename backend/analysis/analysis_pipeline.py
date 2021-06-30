@@ -129,8 +129,6 @@ class AutoLMPipeline:
     def forward(self, s, output_attentions=False) -> AnalysisLMPipelineForwardOutput:
         with torch.no_grad():
             tids = self.for_model(s)
-            print(f"TIDS: ")
-            print(tids)
             output = self.model(tids, output_attentions=output_attentions)
 
             if self.is_auto_regressive:
