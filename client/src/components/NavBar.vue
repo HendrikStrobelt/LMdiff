@@ -1,8 +1,8 @@
 <template>
   <div class="header">
     <div class="headertext">
-      <span style="font-weight: bold;">LMdiff</span> - by the MIT-IBM AI Lab and
-      Harvard NLP
+      <span style="font-weight: bold;">LMdiff</span>
+<!--      - by the MIT-IBM AI Lab and Harvard NLP-->
       <div
           style="padding: 3pt;display: inline-block; vertical-align: baseline;cursor: pointer;"
           @click="$emit('aboutClicked')"

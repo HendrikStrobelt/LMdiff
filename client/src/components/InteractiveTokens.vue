@@ -62,7 +62,7 @@ export interface TokenInfo {
   color: string,
   m1?: ModelTokenInfo,
   m2?: ModelTokenInfo,
-  diff?: { rank?: number, rank_clamped?: number, prob: number }
+  diff?: { rank?: number, rank_clamped?: number, prob: number, topk?:number }
 }
 
 

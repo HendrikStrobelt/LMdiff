@@ -423,7 +423,8 @@ export default defineComponent({
           diff: {
             rank: r.diff.rank[index],
             rank_clamped: r.diff.rank_clamp[index],
-            prob: r.diff.prob[index]
+            prob: r.diff.prob[index],
+            topk: r.diff.topk[index],
           }
           // properties: get_prob(index)
         } as TokenInfo

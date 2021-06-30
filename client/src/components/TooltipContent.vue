@@ -30,6 +30,9 @@
         <div>&Delta;RankCl: <span
             :style="{color:conditionalColor(currentTokenInfo?.diff?.rank_clamped)}">
           {{ currentTokenInfo?.diff?.rank_clamped }}</span></div>
+        <div>&Delta;Top10: <span>
+          {{ currentTokenInfo?.diff?.topk }}</span></div>
+
       </div>
 
     </div>

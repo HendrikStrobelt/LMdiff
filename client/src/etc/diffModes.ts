@@ -43,13 +43,11 @@ export const rankDiffScaleClamped = rankDiffScale.copy()
 
 const val_rankDiffScale = rankDiffScale.copy().range(['<-100', '-100 > -10', '-10 > -1', '-1 > 1', '1 > 10', '10 > 100', '>100']);
 const val_rankDiffScaleClamped = rankDiffScaleClamped.copy().range(['<-50', '-100 > -10', '-10 > -1', '-1 > 1', '1 > 10', '10 > 100', '>50']);
-// const thScale = d3.scaleThreshold<number, string>().domain([10, 100, 1000]).range([
-//     '#396a8f',
-//     '#83bbe6',
-//     // '#ffbe80',
-//     '#eb8375',
-//     '#d6604d'
-// ])
+
+const top10_scale = scalePow<string, string>().exponent(1).domain([0,10])
+  .range(['#fff', '#333']);
+
+
 
 const diff_Dimensions: {
   [key: string]:
@@ -124,6 +122,15 @@ const diff_Dimensions: {
     description: 'Difference of predicted rank clamped to 50: min(rank(M2),50) - min(rank(M1),50)',
     access: 'diff.rank_clamp'
   },
+  topk_intersect:{
+    discrete:true,
+    reverse:false,
+    colorScale: top10_scale,
+    valueScale: uni_scale,
+    name: "Top10 Diff",
+    description: '10 - (Size of intersection set of top 10 terms)',
+    access: 'diff.topk'
+  }
 }
 
 export default diff_Dimensions;

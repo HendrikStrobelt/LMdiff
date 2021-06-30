@@ -116,7 +116,7 @@ export interface AnalyzeTextResponse {
     tokens: string[],
     m1: PerModelInfo,
     m2: PerModelInfo,
-    diff: { rank: number[], prob: number[], rank_clamp: number[] }
+    diff: { rank: number[], prob: number[], rank_clamp: number[], topk:number[] }
   },
 }
 
