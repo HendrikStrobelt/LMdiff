@@ -16,6 +16,9 @@ export const available_tokenizations = {
       // token = (token.startsWith('ľ')) ? '“' : token;
       // token = (token.startsWith('Ŀ')) ? '”' : token;
       // token = (token.startsWith('Ļ')) ? "'" : token;
+      // TODO: figure out the weird thingies:
+      token = token.replace('ÃŁ','ß')
+      token = token.replace('Ã¶','ö')
       return token_encoding(token)
     }
   },
