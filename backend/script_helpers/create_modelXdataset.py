@@ -5,7 +5,7 @@ from tqdm import tqdm
 import h5py
 from analysis import model_name2path, model_path2name
 from analysis.analysis_pipeline import AutoLMPipeline, collect_analysis_info
-from analysis.analysis_results_dataset import H5AnalysisResultDataset
+from analysis.analysis_cache import AnalysisCache
 from analysis.text_dataset import TextDataset
 
 def analyze_dataset(
@@ -22,7 +22,7 @@ def analyze_dataset(
         FileExistsError: Will not overwrite a file that already exists without `force_overwrite` set to True
 
     Returns:
-        H5AnalysisResultDataset that can be saved or used
+        AnalysisCache that can be saved or used
     """
     outfname = Path(outfname)
     tds = TextDataset.load(dataset_fname)
@@ -57,12 +57,12 @@ def analyze_dataset(
     # Add content
     content = tds.content if first_n is None else tds.content[:first_n]
     for i, ex in tqdm(enumerate(content), total=len(content)):
-        grp = h5f.create_group(H5AnalysisResultDataset.tokey(i))
+        grp = h5f.create_group(AnalysisCache.tokey(i))
         out = pipeline.forward(ex, output_attentions=output_attentions)
         out = collect_analysis_info(out, k=topk)
         out.save_to_h5group(grp)
 
-    return H5AnalysisResultDataset(h5f)
+    return AnalysisCache(h5f)
 
 def create_analysis_results(
     model_name: str,

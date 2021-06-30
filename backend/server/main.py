@@ -1,9 +1,8 @@
 import argparse
-from analysis.analysis_results_dataset import H5AnalysisResultDataset
+from analysis.analysis_cache import AnalysisCache
 from analysis.helpers import model_name2path, model_path2name
 import os
 import json
-import re
 import torch
 import numpy as np
 from enum import Enum
@@ -22,13 +21,19 @@ from server.utils import deepdict_to_json, SortOrder
 from analysis import AutoLMPipeline, analyze_text
 import path_fixes as pf
 
-from api import LMComparer, ModelManager
-
 __author__ = "DreamTeam V1.5: Hendrik Strobelt, Sebastian Gehrmann, Ben Hoover"
 
 
 @lru_cache
 def get_args():
+    """Expose different behaviors of the server to the user.
+
+    Raises:
+        AssertionError: If the combination of arguments are unsupported
+
+    Returns:
+        parsed arguments for the server, cached
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -80,6 +85,9 @@ def get_args():
     elif only_one_m_provided:
         raise OneModelError
 
+    if not torch.cuda.is_available():
+        args.gpu_device = "cpu"
+
     return args
 
 
@@ -96,6 +104,11 @@ class ServerConfig:
 
 @lru_cache
 def get_config() -> ServerConfig:
+    """Convert the args for the server into a form used by the endpoints
+
+    Returns:
+        ServerConfig
+    """
     config_dir = get_args().config
     if config_dir is None:
 
@@ -127,24 +140,43 @@ def get_config() -> ServerConfig:
         dataset=dataset,
     )
 
+MODELS_NEEDING_GPU = set([
+        "nlptown/bert-base-multilingual-uncased-sentiment",
+        "bert-base-multilingual-uncased",
+        "bert-base-uncased",
+])
 
 @lru_cache(maxsize=6)
-def get_pipeline(name: str):
-    needs_gpu = set([
-        # "nlptown/bert-base-multilingual-uncased-sentiment",
-        # "bert-base-multilingual-uncased",
-        "bert-base-uncased",
-    ])
-    if name in needs_gpu:
+def get_pipeline(name: str) -> AutoLMPipeline:
+    """Return the analysis pipelines for language modeling (tokenizer + model)
+
+    Args:
+        name (str): Name (or path) to pretrained huggingface model
+
+    Returns:
+        AutoLMPipeline: Convenience methods for analyzing text, cached
+    """
+    if name in MODELS_NEEDING_GPU or get_config().custom_dir or get_config().custom_models:
         device = get_args().gpu_device
     else:
         device = "cpu"
-    print(f"Sending model to {device}")
+    print(f"Sending model `{name}` to {device}")
     return AutoLMPipeline.from_pretrained(name, device=device)
 
 
 @lru_cache
-def get_comparison_results(m1: str, m2: str, dataset: str):
+def get_comparison_results(m1: str, m2: str, dataset: str) -> pd.DataFrame:
+    """Return the preprocessed comparison between m1, m2 on the dataset as a DataFrame
+
+    Args:
+        m1 (str): Name (or path) of pretrained HF model 1
+        m2 (str): Name (or path) of pretrained HF model 2
+        dataset (str): Name of dataset
+
+    Returns:
+        pd.DataFrame: Contains (at least) the following currently supported columns:
+        `n_tokens,avg_rank_diff,max_rank_diff,avg_clamped_rank_diff,max_clamped_rank_diff,avg_prob_diff,max_prob_diff,avg_topk_diff,max_topk_diff`
+    """
     m1_path_name = model_name2path(m1)
     m2_path_name = model_name2path(m2)
     results_fname = (
@@ -155,14 +187,29 @@ def get_comparison_results(m1: str, m2: str, dataset: str):
 
 
 @lru_cache
-def get_analysis_results(dataset: str, mname: str):
+def get_analysis_results(dataset: str, mname: str) -> AnalysisCache:
+    """Fetch the HDF5 file containing cached results of model `mname` on `dataset`
+
+    Args:
+        dataset (str): Name of dataset
+        mname (str): Name (or path) to HF pretrained model
+
+    Returns:
+        AnalysisCache
+e: Contains the logits and tokenizations (sometimes also attentions) of every example in the dataset
+    """
     model_path_name = model_name2path(mname)
-    return H5AnalysisResultDataset.from_file(
+    return AnalysisCachee.from_file(
         str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{model_path_name}.h5")
     )
 
 
-def list_all_datasets():
+def list_all_datasets() -> List[Tuple[str, str]]:
+    """Calculate all existing cached analyses
+
+    Returns:
+        List[Tuple[str,str]]: List of all (model, dataset) caches available to serve to the frontend
+    """
     return [p.stem.split(pf.ANALYSIS_DELIM) for p in get_config().ANALYSIS.glob("*.h5")]
 
 
@@ -175,10 +222,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-lru = {}
-model_manager = ModelManager()
-
-
 class AvailableMetrics(str, Enum):
     avg_rank_diff = "avg_rank_diff"
     max_rank_diff = "max_rank_diff"
@@ -190,14 +233,13 @@ class AvailableMetrics(str, Enum):
     avg_topk_diff = "avg_topk_diff"
     max_topk_diff = "max_topk_diff"
 
-
 available_metrics = set(AvailableMetrics._member_names_)
 
 
 # Main routes
 @app.get("/")
 def index():
-    """For local development, serve the index.html in the dist folder"""
+    """Treat this python server as a webserver. Serve the index.html in the dist folder"""
     return RedirectResponse(url="client/index.html")
 
 
@@ -230,7 +272,16 @@ def send_data(path):
 ## MAIN API ##
 # ======================================================================
 @app.get("/api/available-datasets")
-def get_available_datasets(m1: str, m2: str):
+def get_available_datasets(m1: str, m2: str) -> List[str]:
+    """Calculate what datasets are available between m1 and m2
+
+    Args:
+        m1 (str): Name (or path) to pretrained HF model 1
+        m2 (str): Name (or path) to pretrained HF model 2
+
+    Returns:
+        List[str]: List of all dataset names that apply to m1 and m2
+    """
     if get_config().custom_dir:
         return [get_config().dataset]
 
@@ -251,6 +302,12 @@ def get_available_datasets(m1: str, m2: str):
 
 @app.get("/api/all-models")
 def get_all_models():
+    """Calculate what models are available in the server
+
+    Returns:
+        List[Obj]: Where each Obj is a Dict with keys [model, type, token] needed
+            to display correctly in the interface
+    """
     if get_config().custom_dir or get_config().custom_models:
         return [
             {
@@ -287,6 +344,13 @@ def get_all_models():
 
 @app.post("/api/specific-attention")
 def specific_attention(payload: types.SpecificAttentionRequest):
+    """Calculate the attentions for two different models for all layers and heads
+
+    Unimplemented in current frontend
+
+    Args:
+        payload (types.SpecificAttentionRequest)
+    """
     pp1 = get_pipeline(payload.m1)
     pp2 = get_pipeline(payload.m2)
 
@@ -414,12 +478,19 @@ def new_suggestions(
 
 @app.post("/api/analyze-text")
 def analyze_models_on_text(payload: types.AnalyzeRequest):
+    """Compare a phrase between two models
+
+    Args:
+        payload (types.AnalyzeRequest)
+
+    Returns:
+        Obj: Object containing information from the original request 
+            and the resulting comparison information
+    """
     m1 = payload.m1
     m2 = payload.m2
     pp1 = get_pipeline(m1)
     pp2 = get_pipeline(m2)
-    print("pp1.device: ", pp1.device)
-    print("pp2.device: ", pp1.device)
     text = payload.text
     output = analyze_text(text, pp1, pp2)
     result = deepdict_to_json(output, ndigits=4)
@@ -429,6 +500,5 @@ def analyze_models_on_text(payload: types.AnalyzeRequest):
 
 if __name__ == "__main__":
     # This file is not run as __main__ in the uvicorn environment
-    # args, _ = parser.parse_known_args()
     args = get_args()
     uvicorn.run("server:app", host=args.address, port=args.port)
