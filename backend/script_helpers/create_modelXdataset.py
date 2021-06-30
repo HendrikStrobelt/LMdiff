@@ -64,7 +64,7 @@ def analyze_dataset(
 
     return AnalysisCache(h5f)
 
-def create_analysis_results(
+def create_analysis_cache(
     model_name: str,
     dataset_path: str,
     output_d: str = str(pf.ANALYSIS),
@@ -96,13 +96,22 @@ def create_analysis_results(
     output_f = output_d / default_name
     output_f.parent.mkdir(parents=True, exist_ok=True)
 
-    analyze_dataset(
-        output_f,
-        dataset_path,
-        model_name,
-        topk=top_k,
-        first_n=first_n,
-        force_overwrite=force_overwrite,
-    )
+    try:
+        print(f"Starting analysis {model_name}, {dataset_path}")
+        analyze_dataset(
+            output_f,
+            dataset_path,
+            model_name,
+            topk=top_k,
+            first_n=first_n,
+            force_overwrite=force_overwrite,
+        )
+    except FileExistsError:
+        raise
+    except BaseException as e:
+        print("Error detected. Deleting corrupted hdf5 file.")
+        output_f.unlink()
+        # If any error, kill output file
+        raise
     
     return output_f

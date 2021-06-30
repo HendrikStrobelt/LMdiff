@@ -1,7 +1,7 @@
 from typing import *
 import typer
 from pathlib import Path
-from .create_modelXdataset import create_analysis_results
+from .create_modelXdataset import create_analysis_cache
 from .compare_models_on_dataset import compare_models_on_dataset
 import json
 
@@ -31,12 +31,12 @@ def preprocess(m1: str, m2: str, dataset: str, top_k: int = 10, max_clamp_rank:i
         typer.echo(f"Creating custom folder in {output_dir}")
         custom_folder = True
 
-    # Create the H5 Analysis results files
+    # Create the H5 Analysis cache files
     try:
         if custom_folder:
-            m1f = create_analysis_results(m1, dataset, top_k = top_k, output_d = output_dir)
+            m1f = create_analysis_cache(m1, dataset, top_k = top_k, output_d = output_dir)
         else:
-            m1f = create_analysis_results(m1, dataset, top_k = top_k, output_d = output_dir)
+            m1f = create_analysis_cache(m1, dataset, top_k = top_k, output_d = output_dir)
     except FileExistsError as e:
         typer.echo(e)
         typer.echo(f"\n\tH5 Analysis file for `{m1} x {dataset}` already exists. Continuing")
@@ -44,9 +44,9 @@ def preprocess(m1: str, m2: str, dataset: str, top_k: int = 10, max_clamp_rank:i
 
     try:
         if custom_folder:
-            m2f = create_analysis_results(m2, dataset, top_k = top_k, output_d = output_dir)
+            m2f = create_analysis_cache(m2, dataset, top_k = top_k, output_d = output_dir)
         else:
-            m2f = create_analysis_results(m2, dataset, top_k = top_k, output_d = output_dir)
+            m2f = create_analysis_cache(m2, dataset, top_k = top_k, output_d = output_dir)
     except FileExistsError as e:
         typer.echo(e)
         typer.echo(f"\n\tH5 Analysis file for `{m2} x {dataset}` already exists. Continuing")
