@@ -128,7 +128,7 @@ def get_config() -> ServerConfig:
     )
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=6)
 def get_pipeline(name: str):
     needs_gpu = set([
         # "nlptown/bert-base-multilingual-uncased-sentiment",
