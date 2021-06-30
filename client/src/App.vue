@@ -20,7 +20,7 @@
       <p> LMdiff is collaboration between Hendrik Strobelt (MIT-IBM), Benjamin
         Hoover (MIT-IBM),
         Arvind Satyanarayan (MIT-IBM), and Sebastian Gehrmann (HarvardNLP).</p>
-      <p> NeurIPS'20 demo paper at Arxive: <a href="">...</a><br/>
+      <p> Demo paper at Arxive: <a href="">...</a><br/>
         Github Repo: <a href="">...</a><br/>
         2-min intro video: <a href="">...</a><br/>
       </p>
@@ -295,7 +295,7 @@ export default defineComponent({
       zeroRequests: true,
       searchRequestSent: false,
       modelsMatch: false,
-      showAbout: true,
+      showAbout: false,
       showSearch: true,
       showEnter: true
     })
