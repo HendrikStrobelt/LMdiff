@@ -80,14 +80,16 @@ class AutoLMPipeline:
 
         # Only one should be true below:
         self.is_auto_regressive = "gpt" in self.model.config.model_type
+        self.is_maskable = 'bert' in self.model.config.model_type
+
+        assert self.is_auto_regressive or self.is_maskable, "Needs to be a gpt- or bert-like model"
+
         self.tokenizer.pad_token = (
             self.tokenizer.eos_token
             if self.is_auto_regressive
             else self.tokenizer.pad_token
         )
-        self.is_maskable = 'bert' in self.model.config.model_type
-
-        assert self.is_auto_regressive or self.is_maskable, "Needs to be a gpt- or bert-like model"
+        self.missing_special_tokens = len(self.tokenizer) != self.model.config.vocab_size
 
     @classmethod
     def from_pretrained(cls, name_or_path, device = None):
@@ -105,6 +107,9 @@ class AutoLMPipeline:
         tids = self.tokenizer.encode(s, return_tensors="pt").to(self.device)
 
         if self.is_auto_regressive:
+            # tids = self.for_model(self.tokenizer.bos_token + s)
+            add_tok = 0 if self.missing_special_tokens else self.tokenizer.bos_token_id
+            tids = torch.cat([torch.tensor([add_tok], device=self.device), tids.squeeze()])
             return tids
         elif self.is_maskable:
             N = len(tids[0])
@@ -123,30 +128,22 @@ class AutoLMPipeline:
 
     def forward(self, s, output_attentions=False) -> AnalysisLMPipelineForwardOutput:
         with torch.no_grad():
-
-            if self.is_auto_regressive:
-                # autoregressive ==> add BOE
-                tids = self.for_model(s)
-                # tids = self.for_model(self.tokenizer.bos_token + s)
-            else:
-                tids = self.for_model(s)
-
+            tids = self.for_model(s)
+            print(f"TIDS: ")
+            print(tids)
             output = self.model(tids, output_attentions=output_attentions)
 
             if self.is_auto_regressive:
                 output.logits = output.logits.squeeze()
+                # Offset this as well
                 tids = tids.squeeze()
-                # output.logits = output.logits[:-1]
-                # tids = tids[1:]
-                # tids = tids[1:]
+                output.logits = output.logits[:-1]
+                tids = tids[1:]
 
                 # SWAP THE COMMENTS ON THE BELOW 2 LINES IF WE PREFER THE OTHER FUNCTIONALITY
                 if output_attentions:
-                    # output.attentions = torch.cat(
-                    #     [a[:, :, 1:, 1:] for a in output.attentions], dim=0
-                    # )
                     output.attentions = torch.cat(
-                        [a for a in output.attentions], dim=0
+                        [a[:, :, 1:, 1:] for a in output.attentions], dim=0
                     )
                 else:
                     output.attentions = None
