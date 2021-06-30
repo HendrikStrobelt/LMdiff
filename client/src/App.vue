@@ -15,15 +15,17 @@
         differences in probability and rank of a token under each of the models
         is encoded in gradients of red (model 1) to blue (model 2). Interesting
         snippets can be searched in a pre-recorded corpus using a
-        described metric. For more information please read the NeurIPS demo
-        paper on arxive and check out the github repo. </p>
+        described metric.
+<!--        For more information please read the demo-->
+<!--        paper on arxive and check out the github repo. -->
+      </p>
       <p> LMdiff is collaboration between Hendrik Strobelt (MIT-IBM), Benjamin
         Hoover (MIT-IBM),
         Arvind Satyanarayan (MIT-IBM), and Sebastian Gehrmann (HarvardNLP).</p>
-      <p> Demo paper at Arxive: <a href="">...</a><br/>
-        Github Repo: <a href="">...</a><br/>
-        2-min intro video: <a href="">...</a><br/>
-      </p>
+<!--      <p> Demo paper at Arxive: <a href="">...</a><br/>-->
+<!--        Github Repo: <a href="">...</a><br/>-->
+<!--        2-min intro video: <a href="">...</a><br/>-->
+<!--      </p>-->
       <div
           style="padding: 2px;cursor: pointer;text-align: center;"
           @click="states.showAbout=false">[close]
