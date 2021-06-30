@@ -1,10 +1,10 @@
 import typer
-from analysis.analysis_results_dataset import H5AnalysisResultDataset
+from analysis.analysis_cache import AnalysisCache
 from typing import *
 from pathlib import Path
 import numpy as np
 import torch
-from analysis import LMAnalysisOutputH5, H5AnalysisResultDataset, model_path2name, model_name2path
+from analysis import LMAnalysisOutputH5, AnalysisCache, model_path2name, model_name2path
 from analysis.helpers import topk_token_diff
 from tqdm import tqdm
 import pandas as pd
@@ -38,8 +38,8 @@ def ex_compare(ex1: LMAnalysisOutputH5, ex2: LMAnalysisOutputH5, max_rank=50):
     }
 
 def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
-    ds1 = H5AnalysisResultDataset.from_file(ds1_name)
-    ds2 = H5AnalysisResultDataset.from_file(ds2_name)
+    ds1 = AnalysisCache.from_file(ds1_name)
+    ds2 = AnalysisCache.from_file(ds2_name)
 
 
     assert ds1.dataset_name == ds2.dataset_name, "The two datasets should have the same name"
@@ -68,8 +68,8 @@ def compare_datasets(ds1_name, ds2_name, output_dir, max_clamp_rank):
     return output_f
 
 def compare_models_on_dataset(
-    ds1: str = typer.Argument(..., help="path to first H5AnalysisResultDataset"),
-    ds2: str = typer.Argument(..., help="path to second H5AnalysisResultDataset"),
+    ds1: str = typer.Argument(..., help="path to first AnalysisCache"),
+    ds2: str = typer.Argument(..., help="path to second AnalysisCache"),
     output_dir: str = str(pf.COMPARISONS),
     max_clamp_rank: int = typer.Option(50, help="Ranks beyond this are clamped to this value"),
     invert: bool = typer.Option(True, help="Compute an ds1 -> ds2 evaluation in addition to an ds2 -> ds1 evaluation. Note that some of the 'metrics' are asymmetric"),
