@@ -131,8 +131,8 @@ def get_config() -> ServerConfig:
 @lru_cache(maxsize=4)
 def get_pipeline(name: str):
     needs_gpu = set([
-        "nlptown/bert-base-multilingual-uncased-sentiment",
-        "bert-base-multilingual-uncased",
+        # "nlptown/bert-base-multilingual-uncased-sentiment",
+        # "bert-base-multilingual-uncased",
         "bert-base-uncased",
     ])
     if name in needs_gpu:
@@ -276,8 +276,8 @@ def get_all_models():
         {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
         {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
-        {"model": "nlptown/bert-base-multilingual-uncased-sentiment", "type": "🌺", "token": "bert"},
-        {"model": "bert-base-multilingual-uncased", "type": "🌺", "token": "bert"},
+        # {"model": "nlptown/bert-base-multilingual-uncased-sentiment", "type": "🌺", "token": "bert"},
+        # {"model": "bert-base-multilingual-uncased", "type": "🌺", "token": "bert"},
         {"model": "dbmdz/german-gpt2", "type": "💐", "token": "gpt"},
         {"model": "dbmdz/german-gpt2-faust", "type": "💐", "token": "gpt"},
     ]
