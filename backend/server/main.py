@@ -199,7 +199,7 @@ def get_analysis_results(dataset: str, mname: str) -> AnalysisCache:
 e: Contains the logits and tokenizations (sometimes also attentions) of every example in the dataset
     """
     model_path_name = model_name2path(mname)
-    return AnalysisCachee.from_file(
+    return AnalysisCache.from_file(
         str(get_config().ANALYSIS / f"{dataset}{pf.ANALYSIS_DELIM}{model_path_name}.h5")
     )
 
