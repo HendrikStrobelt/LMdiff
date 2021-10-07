@@ -146,6 +146,10 @@ MODELS_NEEDING_GPU = set([
         "bert-base-uncased",
 ])
 
+MODEL_VERSION = {
+    "dbmdz/german-gpt2": "v1.0"
+}
+
 @lru_cache(maxsize=6)
 def get_pipeline(name: str) -> AutoLMPipeline:
     """Return the analysis pipelines for language modeling (tokenizer + model)
@@ -160,8 +164,12 @@ def get_pipeline(name: str) -> AutoLMPipeline:
         device = get_args().gpu_device
     else:
         device = "cpu"
+    
+    version = MODEL_VERSION.get(name, None)
+    if version is not None:
+        print(f"Model `{name}` requires specific version `{version}`")
     print(f"Sending model `{name}` to {device}")
-    return AutoLMPipeline.from_pretrained(name, device=device)
+    return AutoLMPipeline.from_pretrained(name, device=device, version=version)
 
 
 @lru_cache
@@ -299,7 +307,6 @@ def get_available_datasets(m1: str, m2: str) -> List[str]:
     available_datasets = list(m1_h5.intersection(m2_h5))
     return available_datasets
 
-
 @app.get("/api/all-models")
 def get_all_models():
     """Calculate what models are available in the server
@@ -326,6 +333,7 @@ def get_all_models():
     # ☘🍀🌼🌻🌺🌹💐🌸
 
     res = [
+        # Add version to each of these
         {"model": "gpt2", "type": "🍀", "token": "gpt"},
         {"model": "distilgpt2", "type": "🍀", "token": "gpt"},
         {"model": "lysandre/arxiv-nlp", "type": "🍀", "token": "gpt"},

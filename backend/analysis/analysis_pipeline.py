@@ -92,10 +92,10 @@ class AutoLMPipeline:
         self.missing_special_tokens = len(self.tokenizer) != self.model.config.vocab_size
 
     @classmethod
-    def from_pretrained(cls, name_or_path, device = None):
+    def from_pretrained(cls, name_or_path, device = None, version=None):
         """Create a model and tokenizer from a single name, passing arguemnts to `from_pretrained` of the AutoTokenizer and AutoModel"""
-        model = AutoModelWithLMHead.from_pretrained(name_or_path)
-        tokenizer = AutoTokenizer.from_pretrained(name_or_path)
+        model = AutoModelWithLMHead.from_pretrained(name_or_path, revision=version)
+        tokenizer = AutoTokenizer.from_pretrained(name_or_path, revision=version)
         if device is None and torch.cuda.is_available():
             device = 0
             model = model.to(device)
@@ -225,6 +225,8 @@ def zipTopK(tokens_topk: List[List[str]], probs):
 
 
 def analyze_text(text: str, pp1: AutoLMPipeline, pp2: AutoLMPipeline, topk=10):
+    print("pp1-pp2:", len(frozenset(pp1.tokenizer.vocab.items()) - frozenset(pp2.tokenizer.vocab.items())))
+    print("pp2-pp1:", len(frozenset(pp2.tokenizer.vocab.items()) - frozenset(pp1.tokenizer.vocab.items())))
     assert (
         pp1.vocab_hash == pp2.vocab_hash
     ), "Vocabularies of the two pipelines must align"
