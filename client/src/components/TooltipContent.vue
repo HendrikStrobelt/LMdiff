@@ -3,7 +3,7 @@
     <div class="tooltipSub" v-if="!showMiniTT">
       <div class="tt-c" v-show="!!currentTokenInfo?.m1">
         <div> Prob: {{ formatNumbers(currentTokenInfo?.m1?.prob) }}</div>
-        <div> Rank: {{ currentTokenInfo?.m1?.rank }}</div>
+        <div> Rank: {{ currentTokenInfo?.m1?.rank+1 }}</div>
         <div style="color:#d6604d"
              :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
              v-for="topk in (currentTokenInfo?.m1?.topk || [])"
@@ -13,7 +13,7 @@
       </div>
       <div class="tt-c" v-show="!!currentTokenInfo?.m2">
         <div> Prob: {{ formatNumbers(currentTokenInfo?.m2?.prob) }}</div>
-        <div> Rank: {{ currentTokenInfo?.m2?.rank }}</div>
+        <div> Rank: {{ currentTokenInfo?.m2?.rank + 1 }}</div>
         <div style="color:#4393c3"
              :style="{fontWeight:(topk[0]===currentTokenInfo.token)?'bold':null}"
              v-for="topk in (currentTokenInfo?.m2?.topk || [])"
