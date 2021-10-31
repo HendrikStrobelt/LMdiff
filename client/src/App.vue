@@ -16,16 +16,38 @@
         is encoded in gradients of red (model 1) to blue (model 2). Interesting
         snippets can be searched in a pre-recorded corpus using a
         described metric.
-<!--        For more information please read the demo-->
-<!--        paper on arxive and check out the github repo. -->
+        <!--        For more information please read the demo-->
+        <!--        paper on arxive and check out the github repo. -->
       </p>
-      <p> LMdiff is collaboration between Hendrik Strobelt (MIT-IBM), Benjamin
-        Hoover (MIT-IBM),
-        Arvind Satyanarayan (MIT-IBM), and Sebastian Gehrmann (HarvardNLP).</p>
-<!--      <p> Demo paper at Arxive: <a href="">...</a><br/>-->
-<!--        Github Repo: <a href="">...</a><br/>-->
-<!--        2-min intro video: <a href="">...</a><br/>-->
-<!--      </p>-->
+      <!--      <p>-->
+      <div
+          style="display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-around ">
+        <div
+            style="background-color: #2d2e4c; width: 100%;text-align: center;margin: 3px;padding: 5px;">
+          <a href="https://vimeo.com/640945461" style="font-weight: bold;color: #eeeeee;">Intro Video </a>
+        </div>
+        <div
+            style="background-color: #4393c3; width: 100%;text-align: center;margin: 3px;padding: 5px;">
+          <a href="https://github.com/HendrikStrobelt/LMdiff" style="font-weight: bold;color: #eeeeee;">Github Repo</a>
+        </div>
+        <div
+            style="background-color: rgba(128,128,128); width: 100%;text-align: center;margin: 3px;padding: 5px;">
+          <a href="" style="font-weight: bold;color: #eeeeee;">Demo Paper*</a>
+        </div>
+      </div>
+      *paper was accepted at EMNLP demo track 2021 and won NeurIPS best demo award 2020
+      <br/>
+      <!--      </p>-->
+      <p> LMdiff is a <a href="https://mitibmwatsonailab.mit.edu/">MIT-IBM
+        Watson AI Lab</a> collaboration between: <br/>
+        <a href="http://hendrik.strobelt.com" target="_blank">Hendrik
+          Strobelt</a> (IBM, MIT) ,
+        <a href="https://www.bhoov.com/" target="_blank">Benjamin Hoover</a>
+        (IBM, GeorgiaTech),
+        <a href="https://arvindsatya.com/" target="_blank">Arvind
+          Satyanarayan</a> (MIT),
+        and <a href="https://sebastiangehrmann.com/" target="_blank">Sebastian
+          Gehrmann</a> (HarvardNLP, Google).</p>
       <div
           style="padding: 2px;cursor: pointer;text-align: center;"
           @click="states.showAbout=false">[close]

@@ -1,18 +1,43 @@
 # LMdiff
 
-Comparing large language models
+Qualitative comparison of large language models.
 
-## Setting up
-From the root directory:
+Demo & Paper: [http://lmdiff.net](http://lmdiff.net)
+
+
+<div style='text-align:center; width:100%'>
+<img src="assets/lmdiff_teaser.jpg" />
+</div>
+
+
+<p> LMdiff is a <a href="https://mitibmwatsonailab.mit.edu/">MIT-IBM
+Watson AI Lab</a> collaboration between: <br/>
+<a href="http://hendrik.strobelt.com" target="_blank">Hendrik
+  Strobelt</a> (IBM, MIT) ,
+<a href="https://www.bhoov.com/" target="_blank">Benjamin Hoover</a>
+(IBM, GeorgiaTech),
+<a href="https://arvindsatya.com/" target="_blank">Arvind
+  Satyanarayan</a> (MIT),
+and <a href="https://sebastiangehrmann.com/" target="_blank">Sebastian
+  Gehrmann</a> (HarvardNLP, Google).</p>
+
+## Setting up / Quick start
+From the root directory install Conda dependencies:
 
 ```
 conda env create -f environment.yml
 conda activate LMdiff
 pip install -e .
+```
+
+Install/build frontend: 
+
+```
 cd client
 npm run build:backend
 cd ..
 ```
+
 
 Run the backend in development mode, deploying default models and configurations:
 
@@ -72,30 +97,30 @@ To use your own models:
     </details>
 
 
-    The dataset is a simple `.txt` file, with a new phrase on every line, and with a bit of required metadata header at the top. E.g.,
-    
-        ```
-        ---
-        checksum: 92247a369d5da32a44497be822d4a90879807a8751f5db3ff1926adbeca7ba28
-        name: dataset-dummy
-        type: human_created
-        ---
+	The dataset is a simple `.txt` file, with a new phrase on every line, and with a bit of required metadata header at the top. E.g.,    
+	
+	```
+	---
+	checksum: 92247a369d5da32a44497be822d4a90879807a8751f5db3ff1926adbeca7ba28
+	name: dataset-dummy
+	type: human_created
+	---
+	
+	This is sentence 1, please analyze this.
+	Every line is a new phrase to pass to the model.
+	I can keep adding phrases, so long as they are short enough to pass to the model. They don't even need to be one sentence long.
+	```
 
-        This is sentence 1, please analyze this.
-        Every line is a new phrase to pass to the model.
-        I can keep adding phrases, so long as they are short enough to pass to the model. They don't even need to be one sentence long.
-        ```
-
-        The required fields in the header:
-
-        - `checksum` :: A unique identifier for the state of that file. It can be calculated however you wish, but it should change if anything at all changes in the contents below (e.g., two phrases are transposed, a new phase added, or a period is added after a sentence)
-        - `name` :: The name of the dataset. 
-        - `type` :: Either `human_created` or `machine_generated` if you want to compare on a dataset that was spit out by another model
-
-        Each line in the contents is a new phrase to compare in the language model. A few warnings:
-
-        - Make sure the phrases are short enough that they can be passed to the model given your memory constraints
-        - The dataset is fully loaded into memory to serve to the front end, so avoid creating a text file that is too large to fit in memory.
+	The required fields in the header:
+	
+	- `checksum` :: A unique identifier for the state of that file. It can be calculated however you wish, but it should change if anything at all changes in the contents below (e.g., two phrases are transposed, a new phase added, or a period is added after a sentence)
+	- `name` :: The name of the dataset. 
+	- `type` :: Either `human_created` or `machine_generated` if you want to compare on a dataset that was spit out by another model
+	
+	Each line in the contents is a new phrase to compare in the language model. A few warnings:
+	
+	- Make sure the phrases are short enough that they can be passed to the model given your memory constraints
+	- The dataset is fully loaded into memory to serve to the front end, so avoid creating a text file that is too large to fit in memory.
 
 2. Choose two comparable models
     
