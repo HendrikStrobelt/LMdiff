@@ -24,34 +24,51 @@
           style="display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-around ">
         <div
             style="background-color: #2d2e4c; width: 100%;text-align: center;margin: 3px;padding: 5px;">
-          <a href="https://vimeo.com/640945461" style="font-weight: bold;color: #eeeeee;">Intro Video </a>
+          <a href="https://vimeo.com/640945461"
+             style="font-weight: bold;color: #eeeeee;">Intro Video </a>
         </div>
         <div
             style="background-color: #4393c3; width: 100%;text-align: center;margin: 3px;padding: 5px;">
-          <a href="https://github.com/HendrikStrobelt/LMdiff" style="font-weight: bold;color: #eeeeee;">Github Repo</a>
+          <a href="https://github.com/HendrikStrobelt/LMdiff"
+             style="font-weight: bold;color: #eeeeee;">Github Repo</a>
         </div>
         <div
             style="background-color: rgba(128,128,128); width: 100%;text-align: center;margin: 3px;padding: 5px;">
           <a href="" style="font-weight: bold;color: #eeeeee;">Demo Paper*</a>
         </div>
       </div>
-      *paper was accepted at EMNLP demo track 2021 and won NeurIPS best demo award 2020
+      *paper was accepted at EMNLP demo track 2021 and won NeurIPS best demo
+      award 2020
       <br/>
-      <!--      </p>-->
+
+
       <p> LMdiff is a <a href="https://mitibmwatsonailab.mit.edu/">MIT-IBM
-        Watson AI Lab</a> collaboration between: <br/>
-        <a href="http://hendrik.strobelt.com" target="_blank">Hendrik
-          Strobelt</a> (IBM, MIT) ,
-        <a href="https://www.bhoov.com/" target="_blank">Benjamin Hoover</a>
-        (IBM, GeorgiaTech),
-        <a href="https://arvindsatya.com/" target="_blank">Arvind
-          Satyanarayan</a> (MIT),
-        and <a href="https://sebastiangehrmann.com/" target="_blank">Sebastian
-          Gehrmann</a> (HarvardNLP, Google).</p>
+        Watson AI Lab</a> collaborative project by: <br/>
+      </p>
       <div
+          style="display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-around ">
+
+        <div>
+        <a style="color:#000;" href="http://hendrik.strobelt.com"
+           target="_blank">Hendrik
+          Strobelt</a> <br>(IBM, MIT)
+        </div>
+        <div>
+        <a style="color:#000;" href="https://www.bhoov.com/" target="_blank">Benjamin
+          Hoover</a><br>
+        (IBM, GeorgiaTech)</div>
+        <div><a style="color:#000;" href="https://arvindsatya.com/" target="_blank">Arvind
+          Satyanarayan</a><br> (MIT)</div>
+        <div><a style="color:#000;" href="https://sebastiangehrmann.com/"
+               target="_blank">Sebastian
+        Gehrmann</a> <br>(HarvardNLP, Google)</div>
+      </div>
+
+
+      <p
           style="padding: 2px;cursor: pointer;text-align: center;"
           @click="states.showAbout=false">[close]
-      </div>
+      </p>
 
     </div>
   </transition>
