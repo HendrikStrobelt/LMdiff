@@ -1,7 +1,20 @@
 <template>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script v-if="states.analytics" async src="https://www.googletagmanager.com/gtag/js?id=G-DFQ0HX61PV"></script>
+<script v-if="states.analytics">
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-DFQ0HX61PV');
+</script>
+
   <NavBar :all-models="allModels" v-model:selected-m1="selectedM1"
           v-model:selected-m2="selectedM2"
           @about-clicked="states.showAbout=!states.showAbout"/>
+
+
 
   <transition name="fade">
     <div v-if="states.showAbout" style="max-width: 800px;margin: 0 auto; padding: 15px; box-sizing: border-box;
@@ -33,8 +46,8 @@
              style="font-weight: bold;color: #eeeeee;">Github Repo</a>
         </div>
         <div
-            style="background-color: rgba(128,128,128); width: 100%;text-align: center;margin: 3px;padding: 5px;">
-          <a href="" style="font-weight: bold;color: #eeeeee;">Demo Paper*</a>
+            style="background-color: rgba(128,128,128,1); width: 100%;text-align: center;margin: 3px;padding: 5px;">
+          <a href="http://arxiv.org/abs/2111.01582" style="font-weight: bold;color: #eeeeee;">Demo Paper*</a>
         </div>
       </div>
       *paper was accepted at EMNLP demo track 2021 and won NeurIPS best demo
@@ -319,6 +332,8 @@ import MiniHisto from "./components/MiniHisto.vue";
 import {probDiffColors, rankDiffColors} from "./etc/colors";
 import MidiHistogram from "./components/MidiHistogram.vue";
 
+
+
 export default defineComponent({
   name: 'App',
   components: {
@@ -331,14 +346,17 @@ export default defineComponent({
   },
   setup() {
 
+
+
     const states = reactive({
       analyzeRequestSent: false,
       zeroRequests: true,
       searchRequestSent: false,
       modelsMatch: false,
-      showAbout: false,
+      showAbout: API.isDemo,
       showSearch: true,
-      showEnter: true
+      showEnter: true,
+      analytics: API.isDemo
     })
 
     const api = new API()

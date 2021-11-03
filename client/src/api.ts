@@ -208,8 +208,10 @@ export class API {
         }
       });
     }
+
   }
 
+  public static isDemo = !!import.meta.env.VITE_IS_DEMO
 
   // /**  Example GET request typed with expected response
   //  *
