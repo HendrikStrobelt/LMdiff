@@ -1,16 +1,6 @@
 <template>
 
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-<script v-if="states.analytics" async src="https://www.googletagmanager.com/gtag/js?id=G-DFQ0HX61PV"></script>
-<script v-if="states.analytics">
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-DFQ0HX61PV');
-</script>
-
-  <NavBar :all-models="allModels" v-model:selected-m1="selectedM1"
+ <NavBar :all-models="allModels" v-model:selected-m1="selectedM1"
           v-model:selected-m2="selectedM2"
           @about-clicked="states.showAbout=!states.showAbout"/>
 
