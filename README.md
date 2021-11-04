@@ -30,19 +30,21 @@ conda activate LMdiff
 pip install -e .
 ```
 
-Install/build frontend: 
-
-```
-cd client
-npm run build:backend
-cd ..
-```
-
-
 Run the backend in development mode, deploying default models and configurations:
 
 ```
 uvicorn backend.server:app --reload
+```
+Check the output for the right port (something like [http://localhost:8000](http://localhost:8000)) and open in Browser.
+
+## Rebuild frontend
+This is optional, because we have a compiled version checked into this repo.
+
+```
+cd client
+npm install
+npm run build:backend
+cd ..
 ```
 
 
