@@ -157,7 +157,9 @@ To use your own models:
     ```
 
 ## Architecture
-![LMdiff Architecture](./assets/lmdiff_system_design.png)
+<div style='text-align:center; width:100%'>
+<img src="assets/lmdiff_system_design_diagram.png" />
+</div>
 
 ## (Admin) Getting the Data
 Models and datasets for the deployed app are stored on the cloud and require a private `.dvc/config` file.
