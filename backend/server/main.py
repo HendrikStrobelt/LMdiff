@@ -118,7 +118,7 @@ def get_config() -> ServerConfig:
             return ServerConfig(
                 ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_models=True, m1=m1, m2=m2
             )
-        
+
         # Return default
         return ServerConfig(
             ANALYSIS=pf.ANALYSIS, COMPARISONS=pf.COMPARISONS, custom_dir=False
@@ -164,7 +164,7 @@ def get_pipeline(name: str) -> AutoLMPipeline:
         device = get_args().gpu_device
     else:
         device = "cpu"
-    
+
     version = MODEL_VERSION.get(name, None)
     if version is not None:
         print(f"Model `{name}` requires specific version `{version}`")
@@ -338,9 +338,9 @@ def get_all_models():
         {"model": "distilgpt2", "type": "🍀", "token": "gpt"},
         {"model": "lysandre/arxiv-nlp", "type": "🍀", "token": "gpt"},
         {"model": "lysandre/arxiv", "type": "🍀", "token": "gpt"},
-        {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
-        {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
-        {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
+        # {"model": "bert-base-uncased", "type": "🌼", "token": "bert"},
+        # {"model": "distilbert-base-uncased", "type": "🌼", "token": "bert"},
+        # {"model": "distilbert-base-uncased-finetuned-sst-2-english", "type": "🌼", "token": "bert"},
         # {"model": "nlptown/bert-base-multilingual-uncased-sentiment", "type": "🌺", "token": "bert"},
         # {"model": "bert-base-multilingual-uncased", "type": "🌺", "token": "bert"},
         {"model": "dbmdz/german-gpt2", "type": "💐", "token": "gpt"},
@@ -492,7 +492,7 @@ def analyze_models_on_text(payload: types.AnalyzeRequest):
         payload (types.AnalyzeRequest)
 
     Returns:
-        Obj: Object containing information from the original request 
+        Obj: Object containing information from the original request
             and the resulting comparison information
     """
     m1 = payload.m1

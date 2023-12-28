@@ -177,6 +177,7 @@
 
             <div
                 style="overflow-y: scroll; max-height: 150px;display: inline-block;">
+              <!-- @vue-ignore -->
               <div class="sampleText"
                    v-for="s in sampleTexts" :key="(s,i)=> s.text+i"
                    @click="useSample(s.text)"
@@ -296,7 +297,7 @@
 import {
   defineComponent,
   onUpdated,
-  reactive,
+  reactive, Ref,
   ref,
   watch,
   watchEffect
@@ -374,7 +375,7 @@ export default defineComponent({
 
 
     const currentMetric = ref("avg_clamped_rank_diff")
-    const currentMetricObject = ref({})
+    const currentMetricObject = ref({}) as Ref<any>
 
     const tokenList = ref([] as TokenInfo[])
 

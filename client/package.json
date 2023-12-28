@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
+    "build-force": "vite build",
     "build:backend": "vite build --base='./'",
     "serve": "vite preview"
   },
